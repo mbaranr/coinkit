@@ -7,7 +7,6 @@ from fetchers.euler import fetch_usdc_borrow_rate as fetch_euler_usdc
 from notifier.discord import notify
 
 # thresholds (rates are decimals, e.g. 0.089 = 8.9%)
-SMALL_CHANGE = 0.0001   # 0.01%
 BIG_CHANGE = 0.01       # 1.00%
 
 
@@ -50,8 +49,6 @@ def main():
             save_value(baseline_key, value)
             continue
 
-        baseline_triggered = False
-
         # 🚨 baseline alert (±1.00%)
         if baseline is not None:
             delta_baseline = value - baseline
@@ -64,19 +61,6 @@ def main():
                     f"Current: {value:.2%}"
                 )
                 save_value(baseline_key, value)
-                baseline_triggered = True
-
-        # 🔔 normal change alert (±0.01%), only if baseline didn't fire
-        if not baseline_triggered:
-            delta_last = value - last
-            if abs(delta_last) >= SMALL_CHANGE:
-                direction = "⬆️" if delta_last > 0 else "⬇️"
-                notify(
-                    webhook_url,
-                    f"{direction} {name} changed\n"
-                    f"Previous: {last:.2%}\n"
-                    f"Current: {value:.2%}"
-                )
 
         # always update last value
         save_value(last_key, value)
