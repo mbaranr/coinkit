@@ -1,1 +1,1 @@
-# stonks
+# Stonks
