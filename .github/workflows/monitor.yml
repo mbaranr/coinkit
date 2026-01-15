@@ -1,4 +1,4 @@
-name: Crypto Rate Monitor
+name: stonks
 
 on:
   schedule:
