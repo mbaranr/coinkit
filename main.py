@@ -6,13 +6,13 @@ from fetchers.silo import fetch_usdc_borrow_rate as fetch_silo_usdc
 from fetchers.euler import fetch_usdc_borrow_rate as fetch_euler_usdc
 from notifier.discord import notify
 
-# absolute threshold: 1 percentage point (14% -> 15%)
-THRESHOLD = 0.01
+# thresholds (rates are decimals, e.g. 0.089 = 8.9%)
+SMALL_CHANGE = 0.0001   # 0.01%
+BIG_CHANGE = 0.01       # 1.00%
 
 
 def main():
-    webhook_url = os.environ["DISCORD_WEBHOOK_URL"]
-
+    webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         raise RuntimeError("DISCORD_WEBHOOK_URL not set")
 
@@ -32,7 +32,6 @@ def main():
         name = item["name"]
         value = item["rate"]
 
-        # print current value
         print(f"{name}: {value:.4%}")
 
         last_key = f"{base_key}:last"
@@ -51,30 +50,33 @@ def main():
             save_value(baseline_key, value)
             continue
 
-        # notify on change > 1 percentage point
-        delta_last = value - last
-        if abs(delta_last) > THRESHOLD:
-            direction = "⬆️" if delta_last > 0 else "⬇️"
-            notify(
-                webhook_url,
-                f"{direction} {name} changed (>1.00%)\n"
-                f"Previous: {last:.2%}\n"
-                f"Current: {value:.2%}"
-            )
+        baseline_triggered = False
 
-        # threshold check (absolute percentage points)
+        # 🚨 baseline alert (±1.00%)
         if baseline is not None:
-            delta = value - baseline
-            if abs(delta) >= THRESHOLD:
-                direction = "⬆️" if delta > 0 else "⬇️"
+            delta_baseline = value - baseline
+            if abs(delta_baseline) >= BIG_CHANGE:
+                direction = "⬆️" if delta_baseline > 0 else "⬇️"
                 notify(
                     webhook_url,
                     f"🚨 {direction} {name} moved ≥ 1.00%\n"
                     f"Baseline: {baseline:.2%}\n"
                     f"Current: {value:.2%}"
                 )
-                # reset baseline after threshold hit
                 save_value(baseline_key, value)
+                baseline_triggered = True
+
+        # 🔔 normal change alert (±0.01%), only if baseline didn't fire
+        if not baseline_triggered:
+            delta_last = value - last
+            if abs(delta_last) >= SMALL_CHANGE:
+                direction = "⬆️" if delta_last > 0 else "⬇️"
+                notify(
+                    webhook_url,
+                    f"{direction} {name} changed\n"
+                    f"Previous: {last:.2%}\n"
+                    f"Current: {value:.2%}"
+                )
 
         # always update last value
         save_value(last_key, value)
