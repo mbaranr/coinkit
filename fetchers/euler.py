@@ -28,9 +28,6 @@ def _to_int(x: Any) -> int:
 
 
 def fetch_usdc_borrow_rate() -> dict:
-    """
-    Returns borrow APY as a decimal (e.g. 0.1243 for 12.43%)
-    """
     r = requests.get(EULER_VAULT_URL, timeout=20)
     r.raise_for_status()
     data = r.json()
