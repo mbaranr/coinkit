@@ -1,6 +1,6 @@
 {
   "euler:usdc:borrow:baseline": 0.11101166120955173,
-  "euler:usdc:borrow:last": 0.12026067667760429,
-  "silo:142:usdc:borrow:baseline": 0.183754636863696,
-  "silo:142:usdc:borrow:last": 0.190721577552336
+  "euler:usdc:borrow:last": 0.12023644975026239,
+  "silo:142:usdc:borrow:baseline": 0.134110382470416,
+  "silo:142:usdc:borrow:last": 0.134110382470416
 }
