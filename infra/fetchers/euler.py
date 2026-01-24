@@ -27,7 +27,12 @@ def _to_int(x: Any) -> int:
     raise TypeError(f"Cannot convert to int: {x}")
 
 
-def fetch_usdc_borrow_rate() -> dict:
+def fetch() -> list[dict]:
+    """
+    Fetch Euler USDC borrow APY.
+
+    Returns a list of metric dicts.
+    """
     r = requests.get(EULER_VAULT_URL, timeout=20)
     r.raise_for_status()
     data = r.json()
@@ -48,10 +53,13 @@ def fetch_usdc_borrow_rate() -> dict:
 
     row = info[0]
     raw = _to_int(row.get("borrowAPY"))
-    rate_pct = (raw / EULER_APY_SCALE) * 100.0
+    rate = raw / EULER_APY_SCALE  # decimal
 
-    return {
-        "key": "euler:usdc:borrow",
-        "name": "Euler USDC Borrow APY",
-        "rate": rate_pct / 100.0,  # decimal
-    }
+    return [
+        {
+            "key": "euler:usdc:borrow",
+            "name": "Euler USDC Borrow APY",
+            "value": rate,
+            "unit": "rate",
+        }
+    ]
