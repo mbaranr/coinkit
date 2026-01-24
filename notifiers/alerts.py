@@ -1,14 +1,14 @@
 from typing import List, Dict
 
-from infra.storage.sqlite import (
+from storage.sqlite import (
     init_db,
     record_sample,
     get_last,
 )
 
-from infra.fetchers.silo import fetch as fetch_silo
-from infra.fetchers.euler import fetch as fetch_euler
-from infra.fetchers.aave import fetch as fetch_aave
+from fetchers.silo import fetch as fetch_silo
+from fetchers.euler import fetch as fetch_euler
+from fetchers.aave import fetch as fetch_aave
 
 
 MINOR_CHANGE = 0.01   # 1%

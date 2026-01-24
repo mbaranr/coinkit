@@ -7,8 +7,8 @@ import discord
 from discord.ext import commands, tasks
 from github import Github
 
-from domain.engine import run_once
-from infra.storage.sqlite import (
+from notifiers.alerts import run_once
+from storage.sqlite import (
     get_last,
     list_metrics,
 )
