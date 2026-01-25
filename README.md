@@ -2,6 +2,10 @@
 
 A minimal Discord bot for monitoring metrics from **DeFi protocols**.
 
+<p align="center">
+  <img src="assets/pfp.jpg" alt="Stonks bot profile picture" width="300">
+</p>
+
 ## What It Does
 
 The bot is designed to:
