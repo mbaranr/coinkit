@@ -48,7 +48,7 @@ def handle_caps_metric(
                 "metric_key": key,
                 "message": (
                     f"🚨 {name} is no longer at its cap\n"
-                    f"Usage: {value * 100:.4f}%"
+                    f"Usage: {value * 100:.2f}%"
                 ),
             }
         )
