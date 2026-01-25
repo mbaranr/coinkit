@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 
-CAP_FULL_THRESHOLD = 0.999   # 99.9%
+CAP_FULL_THRESHOLD = 0.99985   # 99.985%
 
 
 def handle_caps_metric(
@@ -15,7 +15,7 @@ def handle_caps_metric(
 
     - no alert on first observation
     - minor update when cap is reached
-    - major alert when cap is clearly freed
+    - major alert when cap is freed
     """
     alerts: List[Dict] = []
 
