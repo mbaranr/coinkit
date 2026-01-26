@@ -19,17 +19,17 @@ EULER_ETHEREUM_VAULT_URL = (
     "?chainId=1"
     "&vaults="
     "0xba98fC35C9dfd69178AD5dcE9FA29c64554783b5,"  # PYUSD
-    "0xe1Ce9AF672f8854845E5474400B6ddC7AE458a10"   # RLUSD
+    "0xaF5372792a29dC6b296d6FFD4AA3386aff8f9BB2"   # RLUSD
 )
 
 YIELD_VAULTS = {
     "ePYUSD-6": {
-        "key": "euler:pyusd:supply:cap",
-        "name": "Euler PYUSD Supply Cap Usage",
+        "key": "euler:sentora_pyusd:supply:cap",
+        "name": "Euler Sentora PYUSD Supply Cap Usage",
     },
-    "eRLUSD-1": {
-        "key": "euler:rlusd:supply:cap",
-        "name": "Euler RLUSD Supply Cap Usage",
+    "eRLUSD-7": {
+        "key": "euler:sentora_rlusd:supply:cap",
+        "name": "Euler Sentora RLUSD Supply Cap Usage",
     },
 }
 
@@ -82,7 +82,7 @@ def fetch() -> List[Dict]:
 
     metrics.append(
         {
-            "key": "euler:usdc:borrow",
+            "key": "euler:usdc:borrow:rate",
             "name": "Euler USDC Borrow APY",
             "value": rate,
             "unit": "rate",

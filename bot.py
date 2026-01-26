@@ -13,8 +13,6 @@ from storage.sqlite import (
     list_metrics,
 )
 
-from alerts.caps import CAP_FULL_THRESHOLD
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -77,7 +75,6 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild: discord.Guild):
     greeting = (
-        "wsg, **stonks** here.\n\n"
         "**Quick start:**\n"
         "`$help`\n"
         "`$metrics`\n"
@@ -120,12 +117,23 @@ async def alert_loop():
 @bot.command()
 async def help(ctx):
     await ctx.send(
-        "🛠 **Commands**\n"
-        "- `$metrics` – list metrics\n"
-        "- `$check <metric_key>` – inspect metric\n"
-        "- `$issue <text>` – create GitHub issue\n"
-        "- `$status` – bot health\n"
-        "- `$ping`\n"
+        "`$metrics` – list metrics\n"
+        "`$check <metric_key>` – inspect metric\n"
+        "`$issue <text>` – create GitHub issue\n"
+        "`$info` – bot info\n"
+        "`$status` – bot health\n"
+    )
+
+
+@bot.command()
+async def info(ctx):
+    await ctx.send(
+        "I check metrics every 5 minutes.\n"
+        "The cap threshold is 99.995%.\n"
+        "Baseline for rate metrics is sticky and set on first observation.\n"
+        "Keys are set as `<protocol>:<token>:<suppy/borrow>:<metric>`.\n\n"
+
+        "GitHub: https://github.com/mbaranr/stonks"
     )
 
 
@@ -139,16 +147,22 @@ async def metrics(ctx):
     if not metrics:
         await ctx.send("No metrics recorded yet.")
         return
-
+    
     await ctx.send(
-        "📈 **Known metrics:**\n" +
-        "\n".join(f"- `{m['key']}` – {m['name']}" for m in metrics)
+        "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
     )
 
 
 @bot.command()
 async def check(ctx, metric_key: str):
     current = get_last(metric_key)
+    now = time.time()
+    time_since = now - LAST_ENGINE_RUN if LAST_ENGINE_RUN else None
+
+    more_than_minute = time_since > 60
+
+    if time_since and more_than_minute:
+        time_since = time_since / 60
 
     if current is None:
         await ctx.send(f"❌ Unknown metric key: `{metric_key}`")
@@ -156,14 +170,13 @@ async def check(ctx, metric_key: str):
 
     name = resolve_metric_name(metric_key)
 
+
     # caps
     if metric_key.endswith("cap"):
-        state = "🧢 AT CAP" if current >= CAP_FULL_THRESHOLD else "⚠️ BELOW CAP"
 
         await ctx.send(
-            f"📊 **{name}**\n"
-            f"Usage: {current:.2%}\n"
-            f"State: {state}"
+            f"**{name}**\n"
+            f"{current:.2%} ({time_since:.0f}{'m' if more_than_minute else 's'} ago)\n"
         )
         return
 
@@ -172,27 +185,22 @@ async def check(ctx, metric_key: str):
 
     if baseline is None:
         await ctx.send(
-            f"📊 **{name}**\n"
-            f"Current: {current:.2%}\n"
-            f"Baseline: not set yet"
+            f"**{name}**\n"
+            f"{current:.2%} ({time_since:.0f}{'m' if more_than_minute else 's'} ago)\n"
+
         )
         return
 
-    delta = current - baseline
-    direction = "⬆️" if delta > 0 else "⬇️"
-
     await ctx.send(
-        f"📊 **{name}**\n"
-        f"Current: {current:.2%}\n"
-        f"Baseline: {baseline:.2%}\n"
-        f"Change: {direction} {delta:+.2%}"
+        f"**{name}**\n"
+        f"{current:.2%} ({time_since:.0f}{'m' if more_than_minute else 's'} ago)\n"
     )
 
 
 @bot.command()
 async def status(ctx):
     now = time.time()
-
+    
     uptime_m = int((now - BOT_START_TIME) / 60)
 
     last_run = (
@@ -208,11 +216,11 @@ async def status(ctx):
     )
 
     await ctx.send(
-        f"🤖 **Bot Status**\n"
         f"Uptime: {uptime_m}m\n"
         f"Last engine run: {last_run}\n"
         f"Last engine error: {last_error}\n"
     )
+
 
 @bot.command()
 async def issue(ctx, *, text: str):
@@ -235,7 +243,7 @@ async def issue(ctx, *, text: str):
             ),
         )
 
-        await ctx.send(f"✅ Issue created:\n{issue.html_url}")
+        await ctx.send(f"{issue.html_url}")
 
     except GithubException as e:
         await ctx.send(

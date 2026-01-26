@@ -21,7 +21,7 @@ def fetch() -> list[dict]:
 
     return [
         {
-            "key": "silo:142:usdc:borrow",
+            "key": "silo:usdc:borrow:rate",
             "name": "Silo USDC Borrow APR",
             "value": rate,
             "unit": "rate",
