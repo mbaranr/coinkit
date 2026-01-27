@@ -210,6 +210,7 @@ async def status(ctx):
     )
 
     await ctx.send(
+        f"**Bot Status:**\n"
         f"Uptime: {uptime_m}m\n"
         f"Last engine run: {last_run}\n"
         f"Last engine error: {last_error}\n"
