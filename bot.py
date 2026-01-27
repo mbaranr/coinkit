@@ -75,6 +75,7 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild: discord.Guild):
     greeting = (
+        f"Hey! I'm **stonks**, here to help monitor your DeFi protocol metrics.\n\n"
         "**Quick start:**\n"
         "`$help`\n"
         "`$metrics`\n"
