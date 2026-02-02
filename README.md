@@ -20,5 +20,3 @@ The bot is designed to:
 - [Silo](https://www.silo.finance/)
 - [Aave](https://aave.com/)
 - [MetaDAO](https://www.metadao.fi)
-
-[invite](https://discord.com/oauth2/authorize?client_id=1464677978230358173&permissions=2251799813827648&integration_type=0&scope=bot)
