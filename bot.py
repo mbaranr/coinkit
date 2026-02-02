@@ -110,6 +110,7 @@ async def alert_loop():
         channel = bot.get_channel(channel_id) if channel_id else None
         if channel:
             level = alert.get("level")
+            is_ico = alert.get("category") == "icos"
             mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
             message = alert["message"]
             if mentions:
@@ -117,7 +118,7 @@ async def alert_loop():
 
             await channel.send(
                 message,
-                delete_after=ALERT_TTL_SECONDS,
+                delete_after=None if is_ico else ALERT_TTL_SECONDS,
             )
 
 
