@@ -68,9 +68,8 @@ async def on_ready():
 async def on_guild_join(guild: discord.Guild):
     greeting = (
         f"Meow! I'm CoinKit, purr-suing your crypto signals claw-sely.\n\n"
-        "**Quick start:**\n"
         "`$help`\n"
-        "`$toys`"
+        "`$info`"
     )
 
     for channel in guild.text_channels:
