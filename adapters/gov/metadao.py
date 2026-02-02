@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -60,6 +61,8 @@ TLDR_PROP = "=cT`"
 GOALS_PROP = "QwBV"
 
 LAUNCH_PREFIX_RE = re.compile(r"^\s*Launch Date:\s*", re.IGNORECASE)
+
+logger = logging.getLogger(__name__)
 
 
 def _post_json(url: str, payload: Dict[str, Any], *, timeout: int = 30) -> Dict[str, Any]:
@@ -260,7 +263,17 @@ def fetch() -> List[Dict[str, Any]]:
 
     Metric value is a list[dict] (each dict describes one scheduled ICO).
     """
-    data = _post_json(URL, PAYLOAD, timeout=30)
+    try:
+        data = _post_json(URL, PAYLOAD, timeout=30)
+    except requests.HTTPError as e:
+        status = getattr(e.response, "status_code", None)
+        if status == 429:
+            logger.warning("MetaDAO fetch rate-limited (429); skipping this cycle")
+            return []
+        raise
+    except Exception:
+        logger.exception("MetaDAO fetch failed; skipping this cycle")
+        return []
     scheduled = _extract_scheduled_icos(data)
 
     return [
