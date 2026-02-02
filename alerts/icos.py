@@ -61,7 +61,6 @@ def handle_ico_schedule(entries: List[Dict]) -> List[Dict]:
             msg = (
                 f":heart_eyes_cat: {project} ICO scheduled for "
                 + (f"{start_pretty}" if start_pretty else "")
-                + (f"\n\n{tldr}" if tldr else "")
                 + (f"\n{fundraising_goals}" if fundraising_goals else "")
                 + (f"\nLink: {twitter}" if twitter else "")
             )
