@@ -11,6 +11,7 @@ from db.repo import (
     list_metrics,
     add_subscription,
     remove_subscription,
+    list_subscriptions,
     subscriptions_for_metric,
 )
 
@@ -121,11 +122,11 @@ async def alert_loop():
 @bot.command()
 async def help(ctx):
     await ctx.send(
-        "**Commands:**\n"
         "`$help` – this message\n"
         "`$toys` – list what I'm batting around\n"
         "`$sub <key>` – be tagged on alerts for a toy\n"
         "`$unsub <key>` – stop hearing about a toy\n"
+        "`$mytoys` – show what you're currently stalking\n"
         "`$info` – how this cat-bot works\n"
         "`$issue <text>` – open a GitHub issue\n"
     )
@@ -134,7 +135,6 @@ async def help(ctx):
 @bot.command()
 async def info(ctx):
     await ctx.send(
-        "**Info:**\n"
         "I sniff metrics and discrete events every 5 minutes.\n"
         "Alerts curl up and disappear after 12 hours.\n"
         "Cap utilization threshold: 99.995%.\n"
@@ -158,8 +158,7 @@ async def toys(ctx):
         return
 
     await ctx.send(
-        "**Toy Basket:**\n"
-        + "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
+        "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
         + "\n\nSubscribe with `$sub <key>` to get a ping when I hiss about it."
     )
 
@@ -174,14 +173,14 @@ async def subscribe(ctx, metric_key: str):
 
     if metric_key not in metrics:
         await ctx.send(
-            f"❌ Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
+            f"Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
         )
         return
 
     created = add_subscription(ctx.author.id, metric_key)
     if created:
         await ctx.send(
-            f"✅ Subscribed to `{metric_key}`. I'll tag you in-channel when this yarn ball moves."
+            f"Subscribed to `{metric_key}`. I'll tag you in-channel when this yarn ball moves."
         )
     else:
         await ctx.send(f"You're already curled up on `{metric_key}`.")
@@ -197,23 +196,40 @@ async def unsubscribe(ctx, metric_key: str):
 
     if metric_key not in metrics:
         await ctx.send(
-            f"❌ Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
+            f"Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
         )
         return
 
     removed = remove_subscription(ctx.author.id, metric_key)
     if removed:
         await ctx.send(
-            f"✅ Unsubscribed from `{metric_key}`. I'll stop batting you when this moves."
+            f"Unsubscribed from `{metric_key}`. I'll stop batting you when this moves."
         )
     else:
         await ctx.send(f"You're not currently stalking `{metric_key}`.")
 
 
+@bot.command(name="mytoys", aliases=["subs"])
+async def mytoys(ctx):
+    subs = [
+        m for m in list_metrics()
+        if not m["key"].endswith(":anchor")
+        and m["key"] in set(list_subscriptions(ctx.author.id))
+    ]
+    if not subs:
+        await ctx.send("You aren't stalking any toys yet. Use `$sub <key>` to get tagged.")
+        return
+
+    await ctx.send(
+        "\n".join(f"`{m['key']}` – {m['name']}" for m in subs)
+        + "\n\nUnstalk with `$unsub <key>`."
+    )
+
+
 @bot.command()
 async def issue(ctx, *, text: str):
     if not GITHUB_TOKEN or not GITHUB_REPO:
-        await ctx.send("❌ GitHub integration not configured.")
+        await ctx.send("GitHub integration not configured.")
         return
 
     try:
@@ -235,10 +251,10 @@ async def issue(ctx, *, text: str):
 
     except GithubException as e:
         await ctx.send(
-            f"❌ GitHub error ({e.status}): {e.data.get('message')}"
+            f"GitHub error ({e.status}): {e.data.get('message')}"
         )
     except Exception as e:
-        await ctx.send(f"❌ Unexpected error: `{e}`")
+        await ctx.send(f"Unexpected error: `{e}`")
 
 
 @bot.command()
