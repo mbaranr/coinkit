@@ -1,13 +1,14 @@
 from typing import List, Dict, Optional
 
-from storage.sqlite import record_sample, get_last
+from db.repo import record_sample, get_last
+
 
 MINOR_CHANGE = 0.01   # 1%
 MAJOR_CHANGE = 0.10   # 10%
 
 
-def _baseline_key(metric_key: str) -> str:
-    return f"{metric_key}:baseline"
+def _anchor_key(metric_key: str) -> str:
+    return f"{metric_key}:anchor"
 
 
 def handle_rate_metric(
@@ -18,18 +19,18 @@ def handle_rate_metric(
     unit: Optional[str],
 ) -> List[Dict]:
     """
-    Delta-based alerting for rate metrics with sticky baseline.
+    Delta-based alerting for rate metrics with a sticky anchor.
     """
     alerts: List[Dict] = []
 
-    baseline_key = _baseline_key(key)
-    baseline = get_last(baseline_key)
+    anchor_key = _anchor_key(key)
+    anchor = get_last(anchor_key)
 
-    # first observation -> set baseline
-    if baseline is None:
+    # first observation -> set anchor
+    if anchor is None:
         record_sample(
-            metric_key=baseline_key,
-            name=f"{name} (baseline)",
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
             value=value,
             unit=unit,
         )
@@ -38,12 +39,12 @@ def handle_rate_metric(
                 "category": "rates",
                 "level": "minor",
                 "metric_key": key,
-                "message": f"{name} initial value: {value:.2%}",
+                "message": f":smirk_cat: {name} anchor set: {value:.2%}",
             }
         )
         return alerts
 
-    delta = value - baseline
+    delta = value - anchor
     abs_delta = abs(delta)
     direction = "⬆️" if delta > 0 else "⬇️"
 
@@ -55,16 +56,16 @@ def handle_rate_metric(
                 "level": "major",
                 "metric_key": key,
                 "message": (
-                    f"🚨🚨 {direction} {name} moved ≥ 10%\n"
-                    f"Baseline: {baseline:.2%}\n"
+                    f":scream_cat: {direction} {name} moved ≥ 10%\n"
+                    f"Anchor: {anchor:.2%}\n"
                     f"Current: {value:.2%}"
                 ),
             }
         )
 
         record_sample(
-            metric_key=baseline_key,
-            name=f"{name} (baseline)",
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
             value=value,
             unit=unit,
         )
@@ -77,16 +78,16 @@ def handle_rate_metric(
                 "level": "minor",
                 "metric_key": key,
                 "message": (
-                    f"🚨 {direction} {name} moved ≥ 1%\n"
-                    f"Baseline: {baseline:.2%}\n"
+                    f":smirk_cat: {direction} {name} moved ≥ 1%\n"
+                    f"Anchor: {anchor:.2%}\n"
                     f"Current: {value:.2%}"
                 ),
             }
         )
 
         record_sample(
-            metric_key=baseline_key,
-            name=f"{name} (baseline)",
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
             value=value,
             unit=unit,
         )

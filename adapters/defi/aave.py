@@ -122,14 +122,14 @@ def fetch() -> List[Dict]:
         metrics.extend(
             [
                 {
-                    "key": f"aave:{symbol.lower()}:supply:cap",
-                    "name": f"Aave {symbol} Supply Cap Usage",
+                    "key": f"aave:{symbol.lower()}:supply:cap_util",
+                    "name": f"Aave {symbol} Supply Cap Utilization",
                     "value": ratios["supply_ratio"],
                     "unit": "ratio",
                 },
                 {
-                    "key": f"aave:{symbol.lower()}:borrow:cap",
-                    "name": f"Aave {symbol} Borrow Cap Usage",
+                    "key": f"aave:{symbol.lower()}:borrow:cap_util",
+                    "name": f"Aave {symbol} Borrow Cap Utilization",
                     "value": ratios["borrow_ratio"],
                     "unit": "ratio",
                 },

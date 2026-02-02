@@ -1,10 +1,10 @@
 from typing import List, Dict
 
-from storage.sqlite import init_db, record_sample, get_last
+from db.repo import init_db, record_sample, get_last
 
-from fetchers.silo import fetch as fetch_silo
-from fetchers.euler import fetch as fetch_euler
-from fetchers.aave import fetch as fetch_aave
+from adapters.defi.silo import fetch as fetch_silo
+from adapters.defi.euler import fetch as fetch_euler
+from adapters.defi.aave import fetch as fetch_aave
 
 from alerts.caps import handle_caps_metric
 from alerts.rates import handle_rate_metric
@@ -15,7 +15,7 @@ def run_once() -> List[Dict]:
     Run all fetchers once, store samples, evaluate alerts.
 
     Alerting models:
-    - Rates: delta-based, sticky baseline
+    - Rates: delta-based, sticky anchor
     - Caps: state-based (full vs not full)
     """
     init_db()

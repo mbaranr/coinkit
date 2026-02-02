@@ -1,5 +1,4 @@
 import os
-import time
 import logging
 from dotenv import load_dotenv
 
@@ -8,9 +7,11 @@ from discord.ext import commands, tasks
 from github import Github, Auth, GithubException
 
 from engine import run_once
-from storage.sqlite import (
-    get_last,
+from db.repo import (
     list_metrics,
+    add_subscription,
+    remove_subscription,
+    subscriptions_for_metric,
 )
 
 
@@ -22,17 +23,12 @@ logging.basicConfig(
 logger = logging.getLogger("stonks")
 
 
-BOT_START_TIME = time.time()
-LAST_ENGINE_RUN = None
-LAST_ENGINE_ERROR = None
-
 ALERT_INTERVAL_SECONDS = 5 * 60
-ALERT_TTL_SECONDS = 24 * 60 * 60
+ALERT_TTL_SECONDS = 12 * 60 * 60
 
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-ROLE_ID = os.getenv("DISCORD_ALERT_ROLE_ID")
 
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")
@@ -60,13 +56,6 @@ bot = commands.Bot(
 )
 
 
-def resolve_metric_name(metric_key: str) -> str:
-    for m in list_metrics():
-        if m["key"] == metric_key:
-            return m["name"]
-    return metric_key
-
-
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
@@ -76,11 +65,10 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild: discord.Guild):
     greeting = (
-        f"Hey! I'm **stonks**, here to help monitor your DeFi protocol metrics.\n\n"
+        f"Meow! I'm CoinKit, purr-suing your crypto signals claw-sely.\n\n"
         "**Quick start:**\n"
         "`$help`\n"
-        "`$metrics`\n"
-        "`$check <metric_key>`\n"
+        "`$toys`"
     )
 
     for channel in guild.text_channels:
@@ -89,32 +77,43 @@ async def on_guild_join(guild: discord.Guild):
             break
 
 
-def format_alert(alert: dict) -> str:
-    if alert["level"] == "major" and ROLE_ID:
-        return f"<@&{ROLE_ID}> {alert['message']}"
-    return alert["message"]
+def subscriber_mentions(alert: dict) -> str:
+    """
+    Build a mention string for users subscribed to this metric.
+    Mentions are added to the alert message in-channel (no DMs needed).
+    """
+    metric_key = alert.get("metric_key")
+    if not metric_key:
+        return ""
+
+    user_ids = subscriptions_for_metric(metric_key)
+    if not user_ids:
+        return ""
+
+    return " ".join(f"<@{uid}>" for uid in user_ids)
 
 
 @tasks.loop(seconds=ALERT_INTERVAL_SECONDS)
 async def alert_loop():
-    global LAST_ENGINE_RUN, LAST_ENGINE_ERROR
-
     await bot.wait_until_ready()
 
     try:
         alerts = run_once()
-        LAST_ENGINE_RUN = time.time()
-        LAST_ENGINE_ERROR = None
     except Exception:
-        LAST_ENGINE_ERROR = time.time()
         logger.exception("Engine error")
         return
 
     for alert in alerts:
         channel = bot.get_channel(CHANNELS.get(alert["category"]))
         if channel:
+            level = alert.get("level")
+            mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
+            message = alert["message"]
+            if mentions:
+                message = f"{message}\n{mentions}"
+
             await channel.send(
-                format_alert(alert),
+                message,
                 delete_after=ALERT_TTL_SECONDS,
             )
 
@@ -123,11 +122,12 @@ async def alert_loop():
 async def help(ctx):
     await ctx.send(
         "**Commands:**\n"
-        "`$metrics` – list metrics\n"
-        "`$check <metric_key>` – inspect metric\n"
-        "`$issue <text>` – create GitHub issue\n"
-        "`$info` – bot info\n"
-        "`$status` – bot health\n"
+        "`$help` – this message\n"
+        "`$toys` – list what I'm batting around\n"
+        "`$sub <key>` – be tagged on alerts for a toy\n"
+        "`$unsub <key>` – stop hearing about a toy\n"
+        "`$info` – how this cat-bot works\n"
+        "`$issue <text>` – open a GitHub issue\n"
     )
 
 
@@ -135,92 +135,79 @@ async def help(ctx):
 async def info(ctx):
     await ctx.send(
         "**Info:**\n"
-        "I check metrics every 5 minutes.\n"
-        "Alerts are deleted after 24 hours.\n"
-        "The cap threshold is 99.995%.\n"
-        "Baseline for rate metrics is sticky and set on first observation.\n"
-        "Keys are set as `<protocol>:<token>:<supply/borrow>:<metric>`.\n\n"
+        "I sniff metrics and discrete events every 5 minutes.\n"
+        "Alerts curl up and disappear after 12 hours.\n"
+        "Cap utilization threshold: 99.995%.\n"
+        "Rate anchors are sticky from first observation.\n\n"
 
-        "GitHub: https://github.com/mbaranr/stonks"
+        "GitHub: https://github.com/mbaranr/coinkit"
     )
 
 
-@bot.command()
-async def metrics(ctx):
+@bot.command(name="toys")
+async def toys(ctx):
     metrics = [
         m for m in list_metrics()
-        if not m["key"].endswith(":baseline")
+        if not m["key"].endswith(":anchor")
     ]
 
     if not metrics:
-        await ctx.send("No metrics recorded yet.")
-        return
-    
-    await ctx.send(
-        "**Known Metrics:**\n" +
-        "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
-    )
-
-
-@bot.command()
-async def check(ctx, metric_key: str):
-    current = get_last(metric_key)
-    now = time.time()
-    time_since = now - LAST_ENGINE_RUN if LAST_ENGINE_RUN else None
-
-    more_than_minute = time_since > 60
-
-    if time_since and more_than_minute:
-        time_since = time_since / 60
-
-    if current is None:
-        await ctx.send(f"❌ Unknown metric key: `{metric_key}`")
-        return
-
-    name = resolve_metric_name(metric_key)
-
-
-    # caps
-    if metric_key.endswith("cap"):
-
         await ctx.send(
-            f"**{name}:**\n"
-            f"{current:.2%} ({time_since:.0f}{'m' if more_than_minute else 's'} ago)\n"
+            "No metrics recorded yet. I'll fill the toy box after the next prowl."
         )
         return
 
-    # rates
-
     await ctx.send(
-        f"**{name}:**\n"
-        f"{current:.2%} ({time_since:.0f}{'m' if more_than_minute else 's'} ago)\n"
+        "**Toy Basket:**\n"
+        + "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
+        + "\n\nSubscribe with `$sub <key>` to get a ping when I hiss about it."
     )
 
 
-@bot.command()
-async def status(ctx):
-    now = time.time()
-    
-    uptime_m = int((now - BOT_START_TIME) / 60)
+@bot.command(name="sub")
+async def subscribe(ctx, metric_key: str):
+    metrics = {
+        m["key"]
+        for m in list_metrics()
+        if not m["key"].endswith(":anchor")
+    }
 
-    last_run = (
-        "never"
-        if LAST_ENGINE_RUN is None
-        else f"{int((now - LAST_ENGINE_RUN) / 60)}m ago"
-    )
+    if metric_key not in metrics:
+        await ctx.send(
+            f"❌ Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
+        )
+        return
 
-    last_error = (
-        "never"
-        if LAST_ENGINE_ERROR is None
-        else f"{int((now - LAST_ENGINE_ERROR) / 60)}m ago"
-    )
+    created = add_subscription(ctx.author.id, metric_key)
+    if created:
+        await ctx.send(
+            f"✅ Subscribed to `{metric_key}`. I'll tag you in-channel when this yarn ball moves."
+        )
+    else:
+        await ctx.send(f"You're already curled up on `{metric_key}`.")
 
-    await ctx.send(
-        f"**Bot Status:**\n"
-        f"Uptime: {uptime_m}m\n"
-        f"Last engine run: {last_run}\n"
-        f"Last engine error: {last_error}\n"
-    )
+
+@bot.command(name="unsub")
+async def unsubscribe(ctx, metric_key: str):
+    metrics = {
+        m["key"]
+        for m in list_metrics()
+        if not m["key"].endswith(":anchor")
+    }
+
+    if metric_key not in metrics:
+        await ctx.send(
+            f"❌ Unknown toy: `{metric_key}`. Try `$toys` to see my toy basket."
+        )
+        return
+
+    removed = remove_subscription(ctx.author.id, metric_key)
+    if removed:
+        await ctx.send(
+            f"✅ Unsubscribed from `{metric_key}`. I'll stop batting you when this moves."
+        )
+    else:
+        await ctx.send(f"You're not currently stalking `{metric_key}`.")
 
 
 @bot.command()
@@ -256,7 +243,9 @@ async def issue(ctx, *, text: str):
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send("pong")
+    await ctx.send(
+        "pong"
+    )
 
 
 if __name__ == "__main__":
