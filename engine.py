@@ -44,6 +44,13 @@ def run_once() -> List[Dict]:
             last_value = get_last(key)
 
             if unit == "json" and key == "metadao:icos:scheduled":
+                # Record a lightweight count so the toy list includes this key
+                record_sample(
+                    metric_key=key,
+                    name=name,
+                    value=float(len(value or [])),
+                    unit=unit,
+                )
                 alerts.extend(handle_ico_schedule(value or []))
                 continue
 
