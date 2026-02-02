@@ -5,9 +5,11 @@ from db.repo import init_db, record_sample, get_last
 from adapters.defi.silo import fetch as fetch_silo
 from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
+from adapters.gov.metadao import fetch as fetch_metadao
 
 from alerts.caps import handle_caps_metric
 from alerts.rates import handle_rate_metric
+from alerts.icos import handle_ico_schedule
 
 
 def run_once() -> List[Dict]:
@@ -17,6 +19,7 @@ def run_once() -> List[Dict]:
     Alerting models:
     - Rates: delta-based, sticky anchor
     - Caps: state-based (full vs not full)
+    - ICOs: scheduled + launch-day alerts
     """
     init_db()
 
@@ -26,6 +29,7 @@ def run_once() -> List[Dict]:
         fetch_silo,
         fetch_euler,
         fetch_aave,
+        fetch_metadao,
     ]
 
     for fetcher in fetchers:
@@ -34,16 +38,23 @@ def run_once() -> List[Dict]:
         for metric in metrics:
             key = metric["key"]
             name = metric["name"]
-            value = float(metric["value"])
+            value = metric["value"]
             unit = metric.get("unit")
 
             last_value = get_last(key)
+
+            if unit == "json" and key == "metadao:icos:scheduled":
+                alerts.extend(handle_ico_schedule(value or []))
+                continue
+
+            # numeric metrics only beyond this point
+            value_f = float(value)
 
             # always record current value
             record_sample(
                 metric_key=key,
                 name=name,
-                value=value,
+                value=value_f,
                 unit=unit,
             )
 
@@ -52,7 +63,7 @@ def run_once() -> List[Dict]:
                     handle_caps_metric(
                         key=key,
                         name=name,
-                        value=value,
+                        value=value_f,
                         last_value=last_value,
                     )
                 )
@@ -61,7 +72,7 @@ def run_once() -> List[Dict]:
                     handle_rate_metric(
                         key=key,
                         name=name,
-                        value=value,
+                        value=value_f,
                         unit=unit,
                     )
                 )

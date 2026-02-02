@@ -34,6 +34,15 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ico_alerts (
+                block_id TEXT PRIMARY KEY,
+                scheduled_notified_at INTEGER,
+                release_notified_at INTEGER
+            )
+            """
+        )
         conn.commit()
 
 
@@ -161,3 +170,53 @@ def subscriptions_for_metric(metric_key: str) -> List[int]:
         rows = cur.fetchall()
 
     return [int(user_id) for (user_id,) in rows]
+
+
+# ICO alert helpers
+
+def ico_alert_state(block_id: str) -> Dict[str, Optional[int]]:
+    with _LOCK, _connect() as conn:
+        cur = conn.execute(
+            """
+            SELECT scheduled_notified_at, release_notified_at
+            FROM ico_alerts
+            WHERE block_id = ?
+            """,
+            (block_id,),
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return {"scheduled": None, "released": None}
+
+    return {"scheduled": row[0], "released": row[1]}
+
+
+def mark_ico_scheduled(block_id: str, ts: Optional[int] = None):
+    ts = ts or int(time.time())
+    with _LOCK, _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO ico_alerts (block_id, scheduled_notified_at)
+            VALUES (?, ?)
+            ON CONFLICT(block_id) DO UPDATE SET
+                scheduled_notified_at = excluded.scheduled_notified_at
+            """,
+            (block_id, ts),
+        )
+        conn.commit()
+
+
+def mark_ico_released(block_id: str, ts: Optional[int] = None):
+    ts = ts or int(time.time())
+    with _LOCK, _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO ico_alerts (block_id, release_notified_at)
+            VALUES (?, ?)
+            ON CONFLICT(block_id) DO UPDATE SET
+                release_notified_at = excluded.release_notified_at
+            """,
+            (block_id, ts),
+        )
+        conn.commit()

@@ -37,6 +37,7 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 CHANNELS = {
     "rates": int(os.getenv("DISCORD_RATES_CHANNEL_ID", "0")),
     "caps": int(os.getenv("DISCORD_CAPS_CHANNEL_ID", "0")),
+    "icos": int(os.getenv("DISCORD_ICOS_CHANNEL_ID", "0")),
 }
 
 if not TOKEN:
@@ -105,7 +106,8 @@ async def alert_loop():
         return
 
     for alert in alerts:
-        channel = bot.get_channel(CHANNELS.get(alert["category"]))
+        channel_id = CHANNELS.get(alert["category"]) or CHANNELS.get("rates")
+        channel = bot.get_channel(channel_id) if channel_id else None
         if channel:
             level = alert.get("level")
             mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
