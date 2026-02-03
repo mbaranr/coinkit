@@ -50,7 +50,7 @@ def handle_caps_metric(
                 "level": "minor",
                 "metric_key": key,
                 "message": (
-                    f":scream_cat: {name.replace('Supply', '').replace('Borrow', '').replace('Cap', '').replace('   Utilization', '')} {'supply' if is_supply else 'borrow'} cap freed.\n"
+                    f":kissing_cat: {name.replace('Supply', '').replace('Borrow', '').replace('Cap', '').replace('   Utilization', '')} {'supply' if is_supply else 'borrow'} cap freed.\n"
                     f"Utilization: {value * 100:.2f}%"
                 ),
             }
