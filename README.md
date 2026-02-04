@@ -18,5 +18,6 @@ The bot is designed to:
 
 - [Euler](https://www.euler.finance/)
 - [Silo](https://www.silo.finance/)
+- [Dolomite](https://dolomite.io)
 - [Aave](https://aave.com/)
 - [MetaDAO](https://www.metadao.fi)
