@@ -5,6 +5,7 @@ from db.repo import init_db, record_sample, get_last
 from adapters.defi.silo import fetch as fetch_silo
 from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
+from adapters.defi.dolomite import fetch as fetch_dolomite
 from adapters.gov.metadao import fetch as fetch_metadao
 
 from alerts.caps import handle_caps_metric
@@ -29,6 +30,7 @@ def run_once() -> List[Dict]:
         fetch_silo,
         fetch_euler,
         fetch_aave,
+        fetch_dolomite,
         fetch_metadao,
     ]
 
