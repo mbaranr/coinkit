@@ -15,6 +15,10 @@ TARGETS = {
         "key": "dolomite:byusd:borrow:rate",
         "name": "Dolomite BYUSD Borrow APR",
     },
+    "rUSD": {
+        "key": "dolomite:rusd:borrow:rate",
+        "name": "Dolomite rUSD Borrow APR",
+    },
 }
 
 
@@ -31,6 +35,7 @@ def fetch() -> List[Dict]:
     Fetch Dolomite borrow APRs (Berachain):
     - USDC borrow rate
     - BYUSD borrow rate
+    - rUSD borrow rate
 
     Returns a list of metric dicts.
     """
