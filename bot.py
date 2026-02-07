@@ -34,6 +34,8 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO")
 
+ENGINE_ERROR_DM_USER_ID = int(os.getenv("ENGINE_ERROR_DM_USER_ID", "0"))
+
 CHANNELS = {
     "rates": int(os.getenv("DISCORD_RATES_CHANNEL_ID", "0")),
     "caps": int(os.getenv("DISCORD_CAPS_CHANNEL_ID", "0")),
@@ -47,9 +49,13 @@ for name, cid in CHANNELS.items():
     if cid == 0:
         raise RuntimeError(f"DISCORD_{name.upper()}_CHANNEL_ID not set")
 
+if ENGINE_ERROR_DM_USER_ID == 0:
+    raise RuntimeError("ENGINE_ERROR_DM_USER_ID not set")
+
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True 
 
 bot = commands.Bot(
     command_prefix="$",
@@ -94,14 +100,32 @@ def subscriber_mentions(alert: dict) -> str:
     return " ".join(f"<@{uid}>" for uid in user_ids)
 
 
+async def dm_engine_error(exc: Exception) -> None:
+    """
+    Best-effort DM to a single user when the engine errors.
+    This may fail if the user blocks the bot / has DMs closed.
+    """
+    try:
+        user = bot.get_user(ENGINE_ERROR_DM_USER_ID)
+        if user is None:
+            user = await bot.fetch_user(ENGINE_ERROR_DM_USER_ID)
+
+        await user.send(
+            "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
+        )
+    except Exception:
+        logger.exception("Failed to DM engine error notification")
+
+
 @tasks.loop(seconds=ALERT_INTERVAL_SECONDS)
 async def alert_loop():
     await bot.wait_until_ready()
 
     try:
         alerts = run_once()
-    except Exception:
+    except Exception as e:
         logger.exception("Engine error")
+        await dm_engine_error(e)
         return
 
     for alert in alerts:
@@ -141,7 +165,6 @@ async def info(ctx):
         "Alerts curl up and disappear after 12 hours.\n"
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
-
         "GitHub: https://github.com/mbaranr/coinkit"
     )
 
@@ -261,9 +284,7 @@ async def issue(ctx, *, text: str):
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send(
-        "pong"
-    )
+    await ctx.send("pong")
 
 
 if __name__ == "__main__":
