@@ -20,9 +20,9 @@ class TestAdapters(unittest.TestCase):
     def test_fetch_aave(self):
         metrics = fetch_aave()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 4)
+        self.assertEqual(len(metrics), 7)
 
     def test_fetch_dolomite(self):
         metrics = fetch_dolomite()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 3)
+        self.assertEqual(len(metrics), 4)
