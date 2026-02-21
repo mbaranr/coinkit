@@ -72,7 +72,7 @@ def handle_rate_metric(
         )
 
     # minor alert
-    elif abs_delta >= MINOR_CHANGE:
+    elif abs_delta >= MINOR_CHANGE and not (adapter == "jupiter" and unit == "rate"):
         alerts.append(
             {
                 "category": "rates",
@@ -93,7 +93,7 @@ def handle_rate_metric(
             unit=unit,
         )
 
-    elif abs_delta >= (MINOR_CHANGE / 2) and adapter == "jupiter" and unit == "rate":
+    elif abs_delta >= (MINOR_CHANGE / 2):
         alerts.append(
             {
                 "category": "rates",
