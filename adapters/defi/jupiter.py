@@ -46,8 +46,8 @@ def fetch() -> list[dict]:
 
         metrics.append(
             {
-                "key": f"jupiter:syrupusd:{token_key}:borrow:rate",
-                "name": f"Jupiter syrupUSD/{token_symbol} Borrow APR",
+                "key": f"jupiter:syrupusdc:{token_key}:borrow:rate",
+                "name": f"Jupiter syrupUSDC/{token_symbol} Borrow APR",
                 "value": rate,
                 "unit": "rate",
                 "adapter": "jupiter",
