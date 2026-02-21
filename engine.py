@@ -103,6 +103,7 @@ def run_once() -> List[Dict]:
                             name=name,
                             value=value_f,
                             unit=unit,
+                            adapter=adapter,
                         ),
                         adapter,
                     )

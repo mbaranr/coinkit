@@ -17,6 +17,7 @@ def handle_rate_metric(
     name: str,
     value: float,
     unit: Optional[str],
+    adapter: Optional[str] = None,
 ) -> List[Dict]:
     """
     Delta-based alerting for rate metrics with a sticky anchor.
@@ -79,6 +80,27 @@ def handle_rate_metric(
                 "metric_key": key,
                 "message": (
                     f":smirk_cat: {direction} {name} moved ≥ 1%\n"
+                    f"Anchor: {anchor:.2%}\n"
+                    f"Current: {value:.2%}"
+                ),
+            }
+        )
+
+        record_sample(
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
+            value=value,
+            unit=unit,
+        )
+
+    elif abs_delta >= (MINOR_CHANGE / 2) and adapter == "jupiter" and unit == "rate":
+        alerts.append(
+            {
+                "category": "rates",
+                "level": "minor",
+                "metric_key": key,
+                "message": (
+                    f":smirk_cat: {direction} {name} moved ≥ 0.5%\n"
                     f"Anchor: {anchor:.2%}\n"
                     f"Current: {value:.2%}"
                 ),
