@@ -180,6 +180,7 @@ def fetch() -> List[Dict]:
                 "name": f"Aave {asset['symbol']} Supply Cap Utilization",
                 "value": supply_ratio,
                 "unit": "ratio",
+                "adapter": "aave",
             }
         )
 
@@ -191,6 +192,7 @@ def fetch() -> List[Dict]:
                     "name": f"Aave {asset['symbol']} Borrow Cap Utilization",
                     "value": borrow_ratio,
                     "unit": "ratio",
+                    "adapter": "aave",
                 }
             )
 

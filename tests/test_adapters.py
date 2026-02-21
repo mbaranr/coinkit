@@ -4,6 +4,8 @@ from adapters.defi.silo import fetch as fetch_silo
 from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
+from adapters.defi.jupiter import fetch as fetch_jupiter
+
 
 
 class TestAdapters(unittest.TestCase):
@@ -15,7 +17,8 @@ class TestAdapters(unittest.TestCase):
     def test_fetch_euler(self):
         metrics = fetch_euler()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 3)
+        print(metrics)
+        self.assertEqual(len(metrics), 4)
 
     def test_fetch_aave(self):
         metrics = fetch_aave()
@@ -26,3 +29,8 @@ class TestAdapters(unittest.TestCase):
         metrics = fetch_dolomite()
         self.assertIsInstance(metrics, list)
         self.assertEqual(len(metrics), 4)
+
+    def test_fetch_jupiter(self):
+        metrics = fetch_jupiter()
+        self.assertIsInstance(metrics, list)
+        self.assertEqual(len(metrics), 5)

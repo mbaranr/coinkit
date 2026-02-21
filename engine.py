@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from db.repo import init_db, record_sample, get_last
 
@@ -7,10 +7,19 @@ from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
 from adapters.gov.metadao import fetch as fetch_metadao
+from adapters.defi.jupiter import fetch as fetch_jupiter
 
 from alerts.caps import handle_caps_metric
 from alerts.rates import handle_rate_metric
 from alerts.icos import handle_ico_schedule
+
+
+def _tag_alerts_with_adapter(alerts: List[Dict], adapter: Optional[str]) -> List[Dict]:
+    value = adapter if isinstance(adapter, str) else ""
+    for alert in alerts:
+        alert["adapter"] = value
+        alert["adapter"] = value
+    return alerts
 
 
 def run_once() -> List[Dict]:
@@ -32,6 +41,7 @@ def run_once() -> List[Dict]:
         fetch_aave,
         fetch_dolomite,
         fetch_metadao,
+        fetch_jupiter,
     ]
 
     for fetcher in fetchers:
@@ -42,6 +52,7 @@ def run_once() -> List[Dict]:
             name = metric["name"]
             value = metric["value"]
             unit = metric.get("unit")
+            adapter = metric.get("adapter")
 
             last_value = get_last(key)
 
@@ -53,7 +64,12 @@ def run_once() -> List[Dict]:
                     value=float(len(value or [])),
                     unit=unit,
                 )
-                alerts.extend(handle_ico_schedule(value or []))
+                alerts.extend(
+                    _tag_alerts_with_adapter(
+                        handle_ico_schedule(value or []),
+                        adapter,
+                    )
+                )
                 continue
 
             # numeric metrics only beyond this point
@@ -69,20 +85,26 @@ def run_once() -> List[Dict]:
 
             if unit == "ratio":
                 alerts.extend(
-                    handle_caps_metric(
-                        key=key,
-                        name=name,
-                        value=value_f,
-                        last_value=last_value,
+                    _tag_alerts_with_adapter(
+                        handle_caps_metric(
+                            key=key,
+                            name=name,
+                            value=value_f,
+                            last_value=last_value,
+                        ),
+                        adapter,
                     )
                 )
             else:
                 alerts.extend(
-                    handle_rate_metric(
-                        key=key,
-                        name=name,
-                        value=value_f,
-                        unit=unit,
+                    _tag_alerts_with_adapter(
+                        handle_rate_metric(
+                            key=key,
+                            name=name,
+                            value=value_f,
+                            unit=unit,
+                        ),
+                        adapter,
                     )
                 )
 

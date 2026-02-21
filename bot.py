@@ -36,18 +36,37 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 ENGINE_ERROR_DM_USER_ID = int(os.getenv("ENGINE_ERROR_DM_USER_ID", "0"))
 
-CHANNELS = {
-    "rates": int(os.getenv("DISCORD_RATES_CHANNEL_ID", "0")),
-    "caps": int(os.getenv("DISCORD_CAPS_CHANNEL_ID", "0")),
-    "icos": int(os.getenv("DISCORD_ICOS_CHANNEL_ID", "0")),
+ADAPTER_CHANNEL_ENV = {
+    "euler": "EULER_CHANNEL_ID",
+    "silo": "SILO_CHANNEL_ID",
+    "metadao": "METADAO_CHANNEL_ID",
+    "dolomite": "DOLOMITE_CHANNEL_ID",
+    "aave": "AAVE_CHANNEL_ID",
+    "jupiter": "JUPITER_CHANNEL_ID",
+}
+
+
+def _read_channel_id(env_name: str) -> int:
+    value = os.getenv(env_name)
+    if not value:
+        return 0
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"{env_name} must be an integer") from exc
+
+
+ADAPTER_CHANNELS = {
+    adapter: _read_channel_id(env_name)
+    for adapter, env_name in ADAPTER_CHANNEL_ENV.items()
 }
 
 if not TOKEN:
     raise RuntimeError("DISCORD_TOKEN not set")
 
-for name, cid in CHANNELS.items():
+for name, cid in ADAPTER_CHANNELS.items():
     if cid == 0:
-        raise RuntimeError(f"DISCORD_{name.upper()}_CHANNEL_ID not set")
+        raise RuntimeError(f"{ADAPTER_CHANNEL_ENV[name]} not set")
 
 if ENGINE_ERROR_DM_USER_ID == 0:
     raise RuntimeError("ENGINE_ERROR_DM_USER_ID not set")
@@ -100,6 +119,16 @@ def subscriber_mentions(alert: dict) -> str:
     return " ".join(f"<@{uid}>" for uid in user_ids)
 
 
+def resolve_alert_channel_id(alert: dict) -> int:
+    adapter = alert.get("adapter")
+    if isinstance(adapter, str):
+        channel_id = ADAPTER_CHANNELS.get(adapter.lower())
+        if channel_id:
+            return channel_id
+
+    return 0
+
+
 async def dm_engine_error(exc: Exception) -> None:
     """
     Best-effort DM to a single user when the engine errors.
@@ -129,20 +158,34 @@ async def alert_loop():
         return
 
     for alert in alerts:
-        channel_id = CHANNELS.get(alert["category"]) or CHANNELS.get("rates")
-        channel = bot.get_channel(channel_id) if channel_id else None
-        if channel:
-            level = alert.get("level")
-            is_ico = alert.get("category") == "icos"
-            mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
-            message = alert["message"]
-            if mentions:
-                message = f"{message}\n{mentions}"
-
-            await channel.send(
-                message,
-                delete_after=None if is_ico else ALERT_TTL_SECONDS,
+        channel_id = resolve_alert_channel_id(alert)
+        if not channel_id:
+            logger.warning(
+                "No channel mapping for alert: metric_key=%s category=%s",
+                alert.get("metric_key"),
+                alert.get("category"),
             )
+            continue
+
+        channel = bot.get_channel(channel_id)
+        if channel is None:
+            try:
+                channel = await bot.fetch_channel(channel_id)
+            except Exception:
+                logger.exception("Failed to resolve Discord channel %s", channel_id)
+                continue
+
+        level = alert.get("level")
+        is_ico = alert.get("category") == "icos"
+        mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
+        message = alert["message"]
+        if mentions:
+            message = f"{message}\n{mentions}"
+
+        await channel.send(
+            message,
+            delete_after=None if is_ico else ALERT_TTL_SECONDS,
+        )
 
 
 @bot.command()

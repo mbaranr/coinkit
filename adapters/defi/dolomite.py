@@ -75,6 +75,7 @@ def fetch() -> List[Dict]:
                 "name": meta["name"],
                 "value": found[sym],  # decimal (e.g. 0.0667)
                 "unit": "rate",
+                "adapter": "dolomite",
             }
         )
 

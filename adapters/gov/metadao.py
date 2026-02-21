@@ -282,5 +282,6 @@ def fetch() -> List[Dict[str, Any]]:
             "name": "MetaDAO Scheduled ICOs",
             "value": scheduled,  # list of scheduled ICO dicts
             "unit": "json",
+            "adapter": "metadao",
         }
     ]
