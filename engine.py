@@ -44,7 +44,11 @@ def run_once() -> List[Dict]:
     ]
 
     for fetcher in fetchers:
-        metrics = fetcher()
+        try:
+            metrics = fetcher()
+        except Exception as e:
+            print(f"Error fetching data from {fetcher.__name__}: {e}")
+            continue
 
         for metric in metrics:
             key = metric["key"]
