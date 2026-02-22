@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from dotenv import load_dotenv
 
 import discord
@@ -13,6 +14,7 @@ from db.repo import (
     remove_subscription,
     list_subscriptions,
     subscriptions_for_metric,
+    init_db
 )
 
 
@@ -86,6 +88,7 @@ bot = commands.Bot(
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
+    init_db()
     alert_loop.start()
 
 
@@ -151,7 +154,7 @@ async def alert_loop():
     await bot.wait_until_ready()
 
     try:
-        alerts = run_once()
+        alerts = await asyncio.to_thread(run_once)
     except Exception as e:
         logger.exception("Engine error")
         await dm_engine_error(e)

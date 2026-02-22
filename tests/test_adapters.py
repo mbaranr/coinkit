@@ -5,6 +5,7 @@ from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
 from adapters.defi.jupiter import fetch as fetch_jupiter
+from adapters.gov.metadao import fetch as fetch_metadao
 
 
 
@@ -17,7 +18,6 @@ class TestAdapters(unittest.TestCase):
     def test_fetch_euler(self):
         metrics = fetch_euler()
         self.assertIsInstance(metrics, list)
-        print(metrics)
         self.assertEqual(len(metrics), 4)
 
     def test_fetch_aave(self):
@@ -34,3 +34,7 @@ class TestAdapters(unittest.TestCase):
         metrics = fetch_jupiter()
         self.assertIsInstance(metrics, list)
         self.assertEqual(len(metrics), 5)
+
+    def test_fetch_metadao(self):
+        metrics = fetch_metadao()
+        self.assertIsInstance(metrics, list)

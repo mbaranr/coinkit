@@ -31,7 +31,6 @@ def run_once() -> List[Dict]:
     - Caps: state-based (full vs not full)
     - ICOs: scheduled + launch-day alerts
     """
-    init_db()
 
     alerts: List[Dict] = []
 
