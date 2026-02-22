@@ -71,8 +71,30 @@ def handle_rate_metric(
             unit=unit,
         )
 
+    # minor alert for Jupiter rates at 0.5% threshold
+    elif abs_delta >= (MINOR_CHANGE / 2) and adapter == "jupiter" and unit == "rate":
+        alerts.append(
+            {
+                "category": "rates",
+                "level": "minor",
+                "metric_key": key,
+                "message": (
+                    f":smirk_cat: {direction} {name} moved ≥ 0.5%\n"
+                    f"Anchor: {anchor:.2%}\n"
+                    f"Current: {value:.2%}"
+                ),
+            }
+        )
+
+        record_sample(
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
+            value=value,
+            unit=unit,
+        )
+
     # minor alert
-    elif abs_delta >= MINOR_CHANGE and not (adapter == "jupiter" and unit == "rate"):
+    elif abs_delta >= MINOR_CHANGE:
         alerts.append(
             {
                 "category": "rates",
@@ -93,25 +115,6 @@ def handle_rate_metric(
             unit=unit,
         )
 
-    elif abs_delta >= (MINOR_CHANGE / 2):
-        alerts.append(
-            {
-                "category": "rates",
-                "level": "minor",
-                "metric_key": key,
-                "message": (
-                    f":smirk_cat: {direction} {name} moved ≥ 0.5%\n"
-                    f"Anchor: {anchor:.2%}\n"
-                    f"Current: {value:.2%}"
-                ),
-            }
-        )
-
-        record_sample(
-            metric_key=anchor_key,
-            name=f"{name} (anchor)",
-            value=value,
-            unit=unit,
-        )
+    
 
     return alerts
