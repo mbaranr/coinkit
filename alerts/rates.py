@@ -40,6 +40,7 @@ def handle_rate_metric(
                 "category": "rates",
                 "level": "minor",
                 "metric_key": key,
+                "adapter": adapter,
                 "message": f":smirk_cat: {name} anchor set: {value:.2%}",
             }
         )
@@ -56,6 +57,7 @@ def handle_rate_metric(
                 "category": "rates",
                 "level": "major",
                 "metric_key": key,
+                "adapter": adapter,
                 "message": (
                     f":scream_cat: {direction} {name} moved ≥ 10%\n"
                     f"Anchor: {anchor:.2%}\n"
@@ -78,6 +80,7 @@ def handle_rate_metric(
                 "category": "rates",
                 "level": "minor",
                 "metric_key": key,
+                "adapter": adapter,
                 "message": (
                     f":smirk_cat: {direction} {name} moved ≥ 0.5%\n"
                     f"Anchor: {anchor:.2%}\n"
@@ -100,6 +103,7 @@ def handle_rate_metric(
                 "category": "rates",
                 "level": "minor",
                 "metric_key": key,
+                "adapter": adapter,
                 "message": (
                     f":smirk_cat: {direction} {name} moved ≥ 1%\n"
                     f"Anchor: {anchor:.2%}\n"
