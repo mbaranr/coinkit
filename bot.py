@@ -141,7 +141,10 @@ async def dm_engine_error(message: str = None) -> None:
         if user is None:
             user = await bot.fetch_user(ENGINE_ERROR_DM_USER_ID)
 
-        text = message or "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
+        if message:
+            text = f"{message}\n\nThe toy broke, but I'm still a good kitty! I'll keep trying to fetch the data every 5 minutes."
+        else:
+            text = "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
         await user.send(text)
     except Exception:
         logger.exception("Failed to DM engine error notification")
