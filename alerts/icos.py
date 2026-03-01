@@ -31,9 +31,9 @@ def _pretty_date(iso_str: Optional[str]) -> Optional[str]:
         return iso_str
 
 
-def handle_ico_schedule(entries: List[Dict]) -> List[Dict]:
+def handle_ico_schedule(entries: List[Dict], key: str, adapter: str) -> List[Dict]:
     """
-    entries: list of ICO dicts from adapters.gov.metadao.fetch()
+    entries: list of ICO dicts.
     Emits:
       - major alert when a new scheduled ICO is first seen
       - major alert on the day of launch (UTC) if not already sent
@@ -68,8 +68,9 @@ def handle_ico_schedule(entries: List[Dict]) -> List[Dict]:
                 {
                     "category": "icos",
                     "level": "major",
-                    "metric_key": "metadao:icos:scheduled",
+                    "metric_key": key,
                     "message": msg,
+                    "adapter": adapter,
                 }
             )
             mark_ico_scheduled(block_id)
@@ -83,8 +84,9 @@ def handle_ico_schedule(entries: List[Dict]) -> List[Dict]:
                 {
                     "category": "icos",
                     "level": "major",
-                    "metric_key": "metadao:icos:scheduled",
+                    "metric_key": key,
                     "message": msg,
+                    "adapter": adapter,
                 }
             )
             mark_ico_released(block_id)

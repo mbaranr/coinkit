@@ -10,6 +10,7 @@ def handle_caps_metric(
     name: str,
     value: float,
     last_value: Optional[float],
+    adapter: Optional[str] = None,
 ) -> List[Dict]:
     """
     State-based alerting for cap metrics.
@@ -39,6 +40,7 @@ def handle_caps_metric(
                     f":pouting_cat: {name.replace('Supply', '').replace('Borrow', '').replace('Cap', '').replace('   Utilization', '')} {'supply' if is_supply else 'borrow'} cap reached.\n"
                     f"Utilization: 100.00%"
                 ),
+                "adapter": adapter,
             }
         )
 
@@ -53,6 +55,7 @@ def handle_caps_metric(
                     f":kissing_cat: {name.replace('Supply', '').replace('Borrow', '').replace('Cap', '').replace('   Utilization', '')} {'supply' if is_supply else 'borrow'} cap freed.\n"
                     f"Utilization: {value * 100:.2f}%"
                 ),
+                "adapter": adapter,
             }
         )
 

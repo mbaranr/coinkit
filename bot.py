@@ -27,7 +27,6 @@ logger = logging.getLogger("stonks")
 
 
 ALERT_INTERVAL_SECONDS = 5 * 60
-ALERT_TTL_SECONDS = 12 * 60 * 60
 
 load_dotenv()
 
@@ -132,7 +131,7 @@ def resolve_alert_channel_id(alert: dict) -> int:
     return 0
 
 
-async def dm_engine_error(exc: Exception) -> None:
+async def dm_engine_error(message: str = None) -> None:
     """
     Best-effort DM to a single user when the engine errors.
     This may fail if the user blocks the bot / has DMs closed.
@@ -142,9 +141,8 @@ async def dm_engine_error(exc: Exception) -> None:
         if user is None:
             user = await bot.fetch_user(ENGINE_ERROR_DM_USER_ID)
 
-        await user.send(
-            "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
-        )
+        text = message or "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
+        await user.send(text)
     except Exception:
         logger.exception("Failed to DM engine error notification")
 
@@ -155,12 +153,16 @@ async def alert_loop():
 
     try:
         alerts = await asyncio.to_thread(run_once)
-    except Exception as e:
+    except Exception as _:
         logger.exception("Engine error")
-        await dm_engine_error(e)
+        await dm_engine_error()
         return
 
     for alert in alerts:
+        if alert.get("category") == "engine":
+            await dm_engine_error(message=alert.get("value"))
+            continue
+
         channel_id = resolve_alert_channel_id(alert)
         if not channel_id:
             logger.warning(
@@ -179,15 +181,13 @@ async def alert_loop():
                 continue
 
         level = alert.get("level")
-        is_ico = alert.get("category") == "icos"
         mentions = "@everyone" if level == "major" else subscriber_mentions(alert)
         message = alert["message"]
         if mentions:
             message = f"{message}\n{mentions}"
 
         await channel.send(
-            message,
-            delete_after=None if is_ico else ALERT_TTL_SECONDS,
+            message
         )
 
 
@@ -208,7 +208,6 @@ async def help(ctx):
 async def info(ctx):
     await ctx.send(
         "I sniff metrics and discrete events every 5 minutes.\n"
-        "Alerts curl up and disappear after 12 hours.\n"
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
         "GitHub: https://github.com/mbaranr/coinkit"
@@ -230,7 +229,7 @@ async def toys(ctx):
 
     await ctx.send(
         "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
-        + "\n\nSubscribe with `$sub <key>` to get a ping when I hiss about it."
+        + "\n\nStalk with `$sub <key>` to get a ping when I hiss about it."
     )
 
 

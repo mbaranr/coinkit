@@ -14,14 +14,6 @@ from alerts.rates import handle_rate_metric
 from alerts.icos import handle_ico_schedule
 
 
-def _tag_alerts_with_adapter(alerts: List[Dict], adapter: Optional[str]) -> List[Dict]:
-    value = adapter if isinstance(adapter, str) else ""
-    for alert in alerts:
-        alert["adapter"] = value
-        alert["adapter"] = value
-    return alerts
-
-
 def run_once() -> List[Dict]:
     """
     Run all fetchers once, store samples, evaluate alerts.
@@ -47,7 +39,15 @@ def run_once() -> List[Dict]:
         try:
             metrics = fetcher()
         except Exception as e:
-            print(f"Error fetching data from {fetcher.__name__}: {e}")
+            msg = f"Error fetching data from {fetcher.__name__}: {e}"
+            print(msg)
+            alerts.append(
+                {
+                    "category": "engine",
+                    "level": "major",
+                    "value": msg,
+                },
+            )
             continue
 
         for metric in metrics:
@@ -60,7 +60,7 @@ def run_once() -> List[Dict]:
             last_value = get_last(key)
 
             if unit == "json" and key == "metadao:icos:scheduled":
-                # Record a lightweight count so the toy list includes this key
+                # record a lightweight count so the toy list includes this key
                 record_sample(
                     metric_key=key,
                     name=name,
@@ -68,10 +68,7 @@ def run_once() -> List[Dict]:
                     unit=unit,
                 )
                 alerts.extend(
-                    _tag_alerts_with_adapter(
-                        handle_ico_schedule(value or []),
-                        adapter,
-                    )
+                    handle_ico_schedule(value or [], key, adapter)
                 )
                 continue
 
@@ -88,28 +85,23 @@ def run_once() -> List[Dict]:
 
             if unit == "ratio":
                 alerts.extend(
-                    _tag_alerts_with_adapter(
-                        handle_caps_metric(
-                            key=key,
-                            name=name,
-                            value=value_f,
-                            last_value=last_value,
-                        ),
-                        adapter,
-                    )
+                    handle_caps_metric(
+                        key=key,
+                        name=name,
+                        value=value_f,
+                        last_value=last_value,
+                        adapter=adapter,
+                    ),
                 )
             else:
                 alerts.extend(
-                    _tag_alerts_with_adapter(
-                        handle_rate_metric(
-                            key=key,
-                            name=name,
-                            value=value_f,
-                            unit=unit,
-                            adapter=adapter,
-                        ),
-                        adapter,
-                    )
+                    handle_rate_metric(
+                        key=key,
+                        name=name,
+                        value=value_f,
+                        unit=unit,
+                        adapter=adapter,
+                    ),
                 )
 
     return alerts
