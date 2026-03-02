@@ -263,17 +263,9 @@ def fetch() -> List[Dict[str, Any]]:
 
     Metric value is a list[dict] (each dict describes one scheduled ICO).
     """
-    try:
-        data = _post_json(URL, PAYLOAD, timeout=30)
-    except requests.HTTPError as e:
-        status = getattr(e.response, "status_code", None)
-        if status == 429:
-            logger.warning("MetaDAO fetch rate-limited (429); skipping this cycle")
-            return []
-        raise
-    except Exception:
-        logger.exception("MetaDAO fetch failed; skipping this cycle")
-        return []
+    
+    data = _post_json(URL, PAYLOAD, timeout=30)
+    
     scheduled = _extract_scheduled_icos(data)
 
     return [
