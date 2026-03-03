@@ -39,7 +39,7 @@ def run_once() -> List[Dict]:
         try:
             metrics = fetcher()
         except Exception as e:
-            msg = f"Error fetching data from {fetcher.__name__}: {e}"
+            msg = f"Error fetching data from {fetcher.__module__.split('.')[-1]}: {e}"
             print(msg)
             alerts.append(
                 {
