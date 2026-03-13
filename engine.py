@@ -3,13 +3,13 @@ from typing import List, Dict, Optional
 from db.repo import init_db, record_sample, get_last
 
 from adapters.defi.silo import fetch as fetch_silo
-from adapters.defi.euler import fetch as fetch_euler
+from adapters.defi.euler import fetch as fetch_euler, SENTORA_CAP_PAIRS
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
 from adapters.gov.metadao import fetch as fetch_metadao
 from adapters.defi.jupiter import fetch as fetch_jupiter
 
-from alerts.caps import handle_caps_metric
+from alerts.caps import handle_caps_metric, handle_paired_caps
 from alerts.rates import handle_rate_metric
 from alerts.icos import handle_ico_schedule
 
@@ -25,6 +25,7 @@ def run_once() -> List[Dict]:
     """
 
     alerts: List[Dict] = []
+    cap_snapshots: Dict[str, tuple] = {}  # key -> (value, last_value) for paired checks
 
     fetchers = [
         fetch_silo,
@@ -84,6 +85,7 @@ def run_once() -> List[Dict]:
             )
 
             if unit == "ratio":
+                cap_snapshots[key] = (value_f, last_value)
                 alerts.extend(
                     handle_caps_metric(
                         key=key,
@@ -103,5 +105,22 @@ def run_once() -> List[Dict]:
                         adapter=adapter,
                     ),
                 )
+
+    for pair in SENTORA_CAP_PAIRS:
+        sk, bk = pair["supply_key"], pair["borrow_key"]
+        if sk in cap_snapshots and bk in cap_snapshots:
+            s_val, s_last = cap_snapshots[sk]
+            b_val, b_last = cap_snapshots[bk]
+            alerts.extend(
+                handle_paired_caps(
+                    pair_name=pair["pair_name"],
+                    supply_key=sk,
+                    supply_value=s_val,
+                    supply_last=s_last,
+                    borrow_value=b_val,
+                    borrow_last=b_last,
+                    adapter=pair["adapter"],
+                )
+            )
 
     return alerts

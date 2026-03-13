@@ -60,3 +60,42 @@ def handle_caps_metric(
         )
 
     return alerts
+
+
+def handle_paired_caps(
+    *,
+    pair_name: str,
+    supply_key: str,
+    supply_value: float,
+    supply_last: Optional[float],
+    borrow_value: float,
+    borrow_last: Optional[float],
+    adapter: Optional[str] = None,
+) -> List[Dict]:
+    """
+    Fires a major alert when both supply and borrow caps for a pair are freed
+    simultaneously (i.e. at least one was full before, and now both are free).
+    """
+    alerts: List[Dict] = []
+
+    if supply_last is None or borrow_last is None:
+        return alerts
+
+    was_either_full = (supply_last >= CAP_FULL_THRESHOLD) or (borrow_last >= CAP_FULL_THRESHOLD)
+    both_now_free = (supply_value < CAP_FULL_THRESHOLD) and (borrow_value < CAP_FULL_THRESHOLD)
+
+    if was_either_full and both_now_free:
+        alerts.append(
+            {
+                "category": "caps",
+                "level": "major",
+                "metric_key": supply_key,
+                "message": (
+                    f":smiley_cat: {pair_name} both supply and borrow caps are free!\n"
+                    f"Supply: {supply_value * 100:.2f}% | Borrow: {borrow_value * 100:.2f}%"
+                ),
+                "adapter": adapter,
+            }
+        )
+
+    return alerts
