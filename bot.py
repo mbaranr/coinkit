@@ -230,10 +230,21 @@ async def toys(ctx):
         )
         return
 
-    await ctx.send(
-        "\n".join(f"`{m['key']}` – {m['name']}" for m in metrics)
-        + "\n\nStalk with `$sub <key>` to get a ping when I hiss about it."
-    )
+    lines = [f"`{m['key']}` – {m['name']}" for m in metrics]
+    chunks, current = [], ""
+    for line in lines:
+        candidate = (current + "\n" + line) if current else line
+        if len(candidate) > 1900:
+            chunks.append(current)
+            current = line
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+
+    for i, chunk in enumerate(chunks):
+        suffix = "\n\nStalk with `$sub <key>` to get a ping when I hiss about it." if i == len(chunks) - 1 else ""
+        await ctx.send(chunk + suffix)
 
 
 @bot.command(name="sub")
@@ -293,10 +304,21 @@ async def mytoys(ctx):
         await ctx.send("You aren't stalking any toys yet. Use `$sub <key>` to get tagged.")
         return
 
-    await ctx.send(
-        "\n".join(f"`{m['key']}` – {m['name']}" for m in subs)
-        + "\n\nUnstalk with `$unsub <key>`."
-    )
+    lines = [f"`{m['key']}` – {m['name']}" for m in subs]
+    chunks, current = [], ""
+    for line in lines:
+        candidate = (current + "\n" + line) if current else line
+        if len(candidate) > 1900:
+            chunks.append(current)
+            current = line
+        else:
+            current = candidate
+    if current:
+        chunks.append(current)
+
+    for i, chunk in enumerate(chunks):
+        suffix = "\n\nUnstalk with `$unsub <key>`." if i == len(chunks) - 1 else ""
+        await ctx.send(chunk + suffix)
 
 
 @bot.command()

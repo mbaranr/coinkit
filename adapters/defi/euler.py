@@ -1,6 +1,7 @@
 import requests
 from typing import Any, Dict, List, Optional
 
+
 EULER_VAULT_ENDPOINT = "https://app.euler.finance/api/v1/vault"
 EULER_APY_SCALE = 1e27  # ray-scaled
 
