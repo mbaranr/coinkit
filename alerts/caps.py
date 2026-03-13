@@ -91,7 +91,7 @@ def handle_paired_caps(
                 "level": "major",
                 "metric_key": supply_key,
                 "message": (
-                    f":smiley_cat: {pair_name} both supply and borrow caps are free!\n"
+                    f":scream_cat: {pair_name} both supply and borrow caps are free!\n"
                     f"Supply: {supply_value * 100:.2f}% | Borrow: {borrow_value * 100:.2f}%"
                 ),
                 "adapter": adapter,

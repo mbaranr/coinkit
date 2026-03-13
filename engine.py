@@ -26,6 +26,7 @@ def run_once() -> List[Dict]:
 
     alerts: List[Dict] = []
     cap_snapshots: Dict[str, tuple] = {}  # key -> (value, last_value) for paired checks
+    paired_keys = {key for pair in SENTORA_CAP_PAIRS for key in (pair["supply_key"], pair["borrow_key"])}
 
     fetchers = [
         fetch_silo,
@@ -86,6 +87,8 @@ def run_once() -> List[Dict]:
 
             if unit == "ratio":
                 cap_snapshots[key] = (value_f, last_value)
+                if key in paired_keys:
+                    continue
                 alerts.extend(
                     handle_caps_metric(
                         key=key,
