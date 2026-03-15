@@ -87,8 +87,6 @@ def run_once() -> List[Dict]:
 
             if unit == "ratio":
                 cap_snapshots[key] = (value_f, last_value)
-                if key in paired_keys:
-                    continue
                 alerts.extend(
                     handle_caps_metric(
                         key=key,
@@ -96,6 +94,7 @@ def run_once() -> List[Dict]:
                         value=value_f,
                         last_value=last_value,
                         adapter=adapter,
+                        paired_keys=paired_keys,
                     ),
                 )
             else:

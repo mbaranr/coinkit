@@ -27,23 +27,13 @@ ETHEREUM_VAULT_IDS = [
     "0xaF5372792a29dC6b296d6FFD4AA3386aff8f9BB2",  # RLUSD
 ]
 
-SENTORA_VAULTS = {
-    "ePYUSD-6": {
-        "asset": "pyusd:usdc",
-        "name": "Euler Sentora PYUSD/USDC Supply Cap Utilization",
-    },
-    "eRLUSD-7": {
-        "asset": "rlusd:usdc",
-        "name": "Euler Sentora RLUSD/USDC Supply Cap Utilization",
-    },
-}
-
-# syrupUSDC collateral vault addresses (one per market, different vaults)
+# Collateral vault addresses (one per paired market)
 SYRUPUSDC_PYUSD_VAULT_ID = "0xE1d2a34e34039711a655aC06Bc1dba6F7ab786B3"
 SYRUPUSDC_RLUSD_VAULT_ID = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
+USDC_RLUSD_VAULT_ID = "0x9bD52F2805c6aF014132874124686e7b248c2Cbb"
 
-# syrupUSDC pairs: supply cap from collateral vault, borrow cap from borrow vault
-SYRUPUSDC_VAULTS = [
+# Paired vaults: supply cap from collateral vault, borrow cap from borrow vault
+PAIRED_VAULTS = [
     {
         "asset": "syrupusdc:pyusd",
         "pair_name": "Euler Sentora syrupUSDC/PYUSD",
@@ -60,6 +50,14 @@ SYRUPUSDC_VAULTS = [
         "name_supply": "Euler Sentora syrupUSDC/RLUSD Supply Cap Utilization",
         "name_borrow": "Euler Sentora syrupUSDC/RLUSD Borrow Cap Utilization",
     },
+    {
+        "asset": "usdc:rlusd",
+        "pair_name": "Euler Sentora USDC/RLUSD",
+        "collateral_vault_id": USDC_RLUSD_VAULT_ID,
+        "borrow_vault_symbol": "eRLUSD-7",
+        "name_supply": "Euler Sentora USDC/RLUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora USDC/RLUSD Borrow Cap Utilization",
+    },
 ]
 
 SENTORA_CAP_PAIRS = [
@@ -69,7 +67,7 @@ SENTORA_CAP_PAIRS = [
         "pair_name": meta["pair_name"],
         "adapter": "euler",
     }
-    for meta in SYRUPUSDC_VAULTS
+    for meta in PAIRED_VAULTS
 ]
 
 
@@ -220,26 +218,14 @@ def fetch() -> List[Dict]:
     # Ethereum: Sentora borrow vaults (PYUSD, RLUSD)
     eth_vaults = _fetch_vaults(chain_id=ETHEREUM_CHAIN_ID, vault_ids=ETHEREUM_VAULT_IDS)
 
-    for vault_symbol, meta in SENTORA_VAULTS.items():
-        vault = _require_vault(eth_vaults, vault_symbol)
-        metrics.append(
-            {
-                "key": f"euler:{MARKET_SENTORA}:{meta['asset']}:supply:cap_util",
-                "name": meta["name"],
-                "value": _supply_cap_ratio(vault),
-                "unit": "ratio",
-                "adapter": "euler",
-            }
-        )
-
-    # Ethereum: syrupUSDC collateral vaults (one per market)
-    syrupusdc_collateral_ids = [m["collateral_vault_id"] for m in SYRUPUSDC_VAULTS]
-    syrupusdc_collateral_vaults = _fetch_vaults_by_address(
-        chain_id=ETHEREUM_CHAIN_ID, vault_ids=syrupusdc_collateral_ids
+    # Ethereum: collateral vaults for paired cap metrics
+    collateral_ids = [m["collateral_vault_id"] for m in PAIRED_VAULTS]
+    collateral_vaults = _fetch_vaults_by_address(
+        chain_id=ETHEREUM_CHAIN_ID, vault_ids=collateral_ids
     )
 
-    for meta in SYRUPUSDC_VAULTS:
-        collateral_vault = _require_vault_addr(syrupusdc_collateral_vaults, meta["collateral_vault_id"])
+    for meta in PAIRED_VAULTS:
+        collateral_vault = _require_vault_addr(collateral_vaults, meta["collateral_vault_id"])
         borrow_vault = _require_vault(eth_vaults, meta["borrow_vault_symbol"])
         metrics.append(
             {

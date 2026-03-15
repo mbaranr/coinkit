@@ -11,6 +11,7 @@ def handle_caps_metric(
     value: float,
     last_value: Optional[float],
     adapter: Optional[str] = None,
+    paired_keys: Optional[set] = None,
 ) -> List[Dict]:
     """
     State-based alerting for cap metrics.
@@ -46,6 +47,10 @@ def handle_caps_metric(
 
     # full -> not full
     elif was_full and not is_full:
+
+        if key in paired_keys:
+            return alerts
+        
         alerts.append(
             {
                 "category": "caps",
