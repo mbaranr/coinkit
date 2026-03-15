@@ -46,7 +46,7 @@ SYRUPUSDC_RLUSD_VAULT_ID = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
 SYRUPUSDC_VAULTS = [
     {
         "asset": "syrupusdc:pyusd",
-        "pair_name": "syrupUSDC/PYUSD",
+        "pair_name": "Euler Sentora syrupUSDC/PYUSD",
         "collateral_vault_id": SYRUPUSDC_PYUSD_VAULT_ID,
         "borrow_vault_symbol": "ePYUSD-6",
         "name_supply": "Euler Sentora syrupUSDC/PYUSD Supply Cap Utilization",
@@ -54,7 +54,7 @@ SYRUPUSDC_VAULTS = [
     },
     {
         "asset": "syrupusdc:rlusd",
-        "pair_name": "syrupUSDC/RLUSD",
+        "pair_name": "Euler Sentora syrupUSDC/RLUSD",
         "collateral_vault_id": SYRUPUSDC_RLUSD_VAULT_ID,
         "borrow_vault_symbol": "eRLUSD-7",
         "name_supply": "Euler Sentora syrupUSDC/RLUSD Supply Cap Utilization",
