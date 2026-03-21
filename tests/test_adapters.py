@@ -8,7 +8,6 @@ from adapters.defi.jupiter import fetch as fetch_jupiter
 from adapters.gov.metadao import fetch as fetch_metadao
 
 
-
 class TestAdapters(unittest.TestCase):
     def test_fetch_silo(self):
         metrics = fetch_silo()
@@ -17,8 +16,10 @@ class TestAdapters(unittest.TestCase):
 
     def test_fetch_euler(self):
         metrics = fetch_euler()
+        for metric in metrics:
+            print(metric)
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 4)
+        self.assertEqual(len(metrics), 6)
 
     def test_fetch_aave(self):
         metrics = fetch_aave()

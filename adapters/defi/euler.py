@@ -22,20 +22,29 @@ TURTLE_SAVUSD_VAULT_ID = "0x5Db7b0dbcDa67E4Ff1B4D9b17a1cf2e6416BCC81"
 TURTLE_USDC_VAULT_ID = "0xA9B21f76a3CD97F3e886Bf299abc5F7cCca58d5f"
 
 # syrupUSDC collateral vault addresses (supply cap tracked independently per market)
-SYRUPUSDC_PYUSD_VAULT_ID = "0xE1d2a34e34039711a655aC06Bc1dba6F7ab786B3"
-SYRUPUSDC_RLUSD_VAULT_ID = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
+SYRUPUSDC_PYUSD_COLLATERAL_VAULT_ID = "0xE1d2a34e34039711a655aC06Bc1dba6F7ab786B3"
+SYRUPUSDC_RLUSD_COLLATERAL_VAULT_ID = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
+
+# debt vault addresses for syrupUSDC 
+SYRUPUSDC_PYUSD_DEBT_VAULT_ID = "0xba98fC35C9dfd69178AD5dcE9FA29c64554783b5"
+SYRUPUSDC_RLUSD_DEBT_VAULT_ID = "0xaF5372792a29dC6b296d6FFD4AA3386aff8f9BB2"
+
 # USDC_RLUSD_VAULT_ID = "0x9bD52F2805c6aF014132874124686e7b248c2Cbb"  # reserved
 
 SYRUPUSDC_VAULTS = [
     {
         "asset": "syrupusdc:pyusd",
-        "collateral_vault_id": SYRUPUSDC_PYUSD_VAULT_ID,
-        "name": "Euler Sentora syrupUSDC/PYUSD Supply Cap Utilization",
+        "collateral_vault_id": SYRUPUSDC_PYUSD_COLLATERAL_VAULT_ID,
+        "debt_vault_id": SYRUPUSDC_PYUSD_DEBT_VAULT_ID,
+        "name_supply": "Euler Sentora syrupUSDC/PYUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora syrupUSDC/PYUSD Borrow Cap Utilization",
     },
     {
         "asset": "syrupusdc:rlusd",
-        "collateral_vault_id": SYRUPUSDC_RLUSD_VAULT_ID,
-        "name": "Euler Sentora syrupUSDC/RLUSD Supply Cap Utilization",
+        "collateral_vault_id": SYRUPUSDC_RLUSD_COLLATERAL_VAULT_ID,
+        "debt_vault_id": SYRUPUSDC_RLUSD_DEBT_VAULT_ID,
+        "name_supply": "Euler Sentora syrupUSDC/RLUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora syrupUSDC/RLUSD Borrow Cap Utilization",
     },
 ]
 
@@ -187,19 +196,33 @@ def fetch() -> List[Dict]:
         }
     )
 
-    # Ethereum: syrupUSDC collateral vaults (independent supply cap metrics)
+    # Ethereum: syrupUSDC collateral and debt vaults (independent supply + borrow cap metrics)
     collateral_ids = [m["collateral_vault_id"] for m in SYRUPUSDC_VAULTS]
+    debt_ids = [m["debt_vault_id"] for m in SYRUPUSDC_VAULTS]
     collateral_vaults = _fetch_vaults_by_address(
         chain_id=ETHEREUM_CHAIN_ID, vault_ids=collateral_ids
+    )
+    debt_vaults = _fetch_vaults_by_address(
+        chain_id=ETHEREUM_CHAIN_ID, vault_ids=debt_ids
     )
 
     for meta in SYRUPUSDC_VAULTS:
         collateral_vault = _require_vault_addr(collateral_vaults, meta["collateral_vault_id"])
+        debt_vault = _require_vault_addr(debt_vaults, meta["debt_vault_id"])
         metrics.append(
             {
                 "key": f"euler:{MARKET_SENTORA}:{meta['asset']}:supply:cap_util",
-                "name": meta["name"],
+                "name": meta["name_supply"],
                 "value": _supply_cap_ratio(collateral_vault),
+                "unit": "ratio",
+                "adapter": "euler",
+            }
+        )
+        metrics.append(
+            {
+                "key": f"euler:{MARKET_SENTORA}:{meta['asset']}:borrow:cap_util",
+                "name": meta["name_borrow"],
+                "value": _borrow_cap_ratio(debt_vault),
                 "unit": "ratio",
                 "adapter": "euler",
             }
