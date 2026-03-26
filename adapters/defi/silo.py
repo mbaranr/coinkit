@@ -1,8 +1,8 @@
 import requests
 
-SILO_MARKET_URL = "https://app.silo.finance/api/lending-market/avalanche/142"
-
-SCALE = 1e18  # debtBaseApr is scaled by 1e18
+SILO_MARKET_URL = "https://app.silo.finance/api/lending-market"
+SILO_MARKET_ID = "avalanche-0x33fAdB3dB0A1687Cdd4a55AB0afa94c8102856A1"
+SCALE = 1e18  # borrowBaseApr is scaled by 1e18
 
 
 def fetch() -> list[dict]:
@@ -11,12 +11,16 @@ def fetch() -> list[dict]:
 
     Returns a list of metric dicts.
     """
-    r = requests.get(SILO_MARKET_URL, timeout=15)
+    r = requests.post(
+        SILO_MARKET_URL,
+        json={"marketId": SILO_MARKET_ID, "account": "0x0000000000000000000000000000000000000000"},
+        timeout=15,
+    )
     r.raise_for_status()
     data = r.json()
 
     silo1 = data["silo1"]  # USDC silo
-    raw_apr = int(silo1["debtBaseApr"])
+    raw_apr = int(silo1["borrowBaseApr"])
     rate = raw_apr / SCALE  # decimal (e.g. 0.186)
 
     return [

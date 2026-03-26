@@ -11,13 +11,12 @@ from adapters.gov.metadao import fetch as fetch_metadao
 class TestAdapters(unittest.TestCase):
     def test_fetch_silo(self):
         metrics = fetch_silo()
+        print(metrics[0])
         self.assertIsInstance(metrics, list)
         self.assertEqual(len(metrics), 1)
 
     def test_fetch_euler(self):
         metrics = fetch_euler()
-        for metric in metrics:
-            print(metric)
         self.assertIsInstance(metrics, list)
         self.assertEqual(len(metrics), 6)
 
