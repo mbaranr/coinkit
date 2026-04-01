@@ -17,8 +17,12 @@ class TestAdapters(unittest.TestCase):
 
     def test_fetch_euler(self):
         metrics = fetch_euler()
+
+        for metrc in metrics:
+            print(metrc)
+
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 6)
+        self.assertEqual(len(metrics), 14)
 
     def test_fetch_aave(self):
         metrics = fetch_aave()

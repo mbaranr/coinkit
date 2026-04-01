@@ -21,35 +21,83 @@ NINESUMMITS_USDC_VAULT_ID = "0x37ca03aD51B8ff79aAD35FadaCBA4CEDF0C3e74e"
 TURTLE_SAVUSD_VAULT_ID = "0x5Db7b0dbcDa67E4Ff1B4D9b17a1cf2e6416BCC81"
 TURTLE_USDC_VAULT_ID = "0xA9B21f76a3CD97F3e886Bf299abc5F7cCca58d5f"
 
-# syrupUSDC collateral vault addresses (supply cap tracked independently per market)
-SYRUPUSDC_PYUSD_COLLATERAL_VAULT_ID = "0xE1d2a34e34039711a655aC06Bc1dba6F7ab786B3"
-SYRUPUSDC_RLUSD_COLLATERAL_VAULT_ID = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
+# Ethereum / Sentora vault addresses (each defined once, referenced by role in each pair)
+VAULT_SYRUPUSDC_PYUSD = "0xE1d2a34e34039711a655aC06Bc1dba6F7ab786B3"
+VAULT_SYRUPUSDC_RLUSD = "0x4BC68f0CC010A0BedA0E3f63CfBEcDee5Ad55A18"
+VAULT_RLUSD           = "0xaF5372792a29dC6b296d6FFD4AA3386aff8f9BB2"
+VAULT_PYUSD           = "0xba98fC35C9dfd69178AD5dcE9FA29c64554783b5"
+VAULT_USDC_RLUSD      = "0x9bD52F2805c6aF014132874124686e7b248c2Cbb"
+VAULT_USDC_PYUSD      = "0xAB2726DAf820Aa9270D14Db9B18c8d187cbF2f30"
 
-# debt vault addresses for syrupUSDC 
-SYRUPUSDC_PYUSD_DEBT_VAULT_ID = "0xba98fC35C9dfd69178AD5dcE9FA29c64554783b5"
-SYRUPUSDC_RLUSD_DEBT_VAULT_ID = "0xaF5372792a29dC6b296d6FFD4AA3386aff8f9BB2"
 
-# USDC_RLUSD_VAULT_ID = "0x9bD52F2805c6aF014132874124686e7b248c2Cbb"  # reserved
-
-SYRUPUSDC_VAULTS = [
-    {
-        "asset": "syrupusdc:pyusd",
-        "collateral_vault_id": SYRUPUSDC_PYUSD_COLLATERAL_VAULT_ID,
-        "debt_vault_id": SYRUPUSDC_PYUSD_DEBT_VAULT_ID,
-        "name_supply": "Euler Sentora syrupUSDC/PYUSD Supply Cap Utilization",
-        "name_borrow": "Euler Sentora syrupUSDC/PYUSD Borrow Cap Utilization",
-    },
+SENTORA_CAP_PAIRS = [
     {
         "asset": "syrupusdc:rlusd",
-        "collateral_vault_id": SYRUPUSDC_RLUSD_COLLATERAL_VAULT_ID,
-        "debt_vault_id": SYRUPUSDC_RLUSD_DEBT_VAULT_ID,
+        "pair_name": "Euler Sentora syrupUSDC/RLUSD",
+        "collateral_vault_id": VAULT_SYRUPUSDC_RLUSD,
+        "debt_vault_id": VAULT_RLUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:syrupusdc:rlusd:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:syrupusdc:rlusd:borrow:cap_util",
         "name_supply": "Euler Sentora syrupUSDC/RLUSD Supply Cap Utilization",
         "name_borrow": "Euler Sentora syrupUSDC/RLUSD Borrow Cap Utilization",
+        "adapter": "euler",
+    },
+    {
+        "asset": "rlusd:usdc",
+        "pair_name": "Euler Sentora RLUSD/USDC",
+        "collateral_vault_id": VAULT_RLUSD,
+        "debt_vault_id": VAULT_USDC_RLUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:rlusd:usdc:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:rlusd:usdc:borrow:cap_util",
+        "name_supply": "Euler Sentora RLUSD/USDC Supply Cap Utilization",
+        "name_borrow": "Euler Sentora RLUSD/USDC Borrow Cap Utilization",
+        "adapter": "euler",
+    },
+    {
+        "asset": "syrupusdc:pyusd",
+        "pair_name": "Euler Sentora syrupUSDC/PYUSD",
+        "collateral_vault_id": VAULT_SYRUPUSDC_PYUSD,
+        "debt_vault_id": VAULT_PYUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:syrupusdc:pyusd:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:syrupusdc:pyusd:borrow:cap_util",
+        "name_supply": "Euler Sentora syrupUSDC/PYUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora syrupUSDC/PYUSD Borrow Cap Utilization",
+        "adapter": "euler",
+    },
+    {
+        "asset": "pyusd:usdc",
+        "pair_name": "Euler Sentora PYUSD/USDC",
+        "collateral_vault_id": VAULT_PYUSD,
+        "debt_vault_id": VAULT_USDC_PYUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:pyusd:usdc:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:pyusd:usdc:borrow:cap_util",
+        "name_supply": "Euler Sentora PYUSD/USDC Supply Cap Utilization",
+        "name_borrow": "Euler Sentora PYUSD/USDC Borrow Cap Utilization",
+        "adapter": "euler",
+    },
+    {
+        "asset": "usdc:pyusd",
+        "pair_name": "Euler Sentora USDC/PYUSD",
+        "collateral_vault_id": VAULT_USDC_PYUSD,
+        "debt_vault_id": VAULT_PYUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:usdc:pyusd:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:usdc:pyusd:borrow:cap_util",
+        "name_supply": "Euler Sentora USDC/PYUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora USDC/PYUSD Borrow Cap Utilization",
+        "adapter": "euler",
+    },
+    {
+        "asset": "usdc:rlusd",
+        "pair_name": "Euler Sentora USDC/RLUSD",
+        "collateral_vault_id": VAULT_USDC_RLUSD,
+        "debt_vault_id": VAULT_RLUSD,
+        "supply_key": f"euler:{MARKET_SENTORA}:usdc:rlusd:supply:cap_util",
+        "borrow_key": f"euler:{MARKET_SENTORA}:usdc:rlusd:borrow:cap_util",
+        "name_supply": "Euler Sentora USDC/RLUSD Supply Cap Utilization",
+        "name_borrow": "Euler Sentora USDC/RLUSD Borrow Cap Utilization",
+        "adapter": "euler",
     },
 ]
-
-# Reserved for future paired cap alerts (supply + borrow cross-pair logic)
-SENTORA_CAP_PAIRS: list = []
 
 
 def _to_int(x: Any) -> int:
@@ -196,23 +244,23 @@ def fetch() -> List[Dict]:
         }
     )
 
-    # Ethereum: syrupUSDC collateral and debt vaults (independent supply + borrow cap metrics)
-    collateral_ids = [m["collateral_vault_id"] for m in SYRUPUSDC_VAULTS]
-    debt_ids = [m["debt_vault_id"] for m in SYRUPUSDC_VAULTS]
-    collateral_vaults = _fetch_vaults_by_address(
-        chain_id=ETHEREUM_CHAIN_ID, vault_ids=collateral_ids
-    )
-    debt_vaults = _fetch_vaults_by_address(
-        chain_id=ETHEREUM_CHAIN_ID, vault_ids=debt_ids
+    # Ethereum: Sentora paired cap metrics (supply from collateral vault, borrow from debt vault)
+    unique_vault_ids = list({
+        vid
+        for pair in SENTORA_CAP_PAIRS
+        for vid in (pair["collateral_vault_id"], pair["debt_vault_id"])
+    })
+    eth_vaults = _fetch_vaults_by_address(
+        chain_id=ETHEREUM_CHAIN_ID, vault_ids=unique_vault_ids
     )
 
-    for meta in SYRUPUSDC_VAULTS:
-        collateral_vault = _require_vault_addr(collateral_vaults, meta["collateral_vault_id"])
-        debt_vault = _require_vault_addr(debt_vaults, meta["debt_vault_id"])
+    for pair in SENTORA_CAP_PAIRS:
+        collateral_vault = _require_vault_addr(eth_vaults, pair["collateral_vault_id"])
+        debt_vault = _require_vault_addr(eth_vaults, pair["debt_vault_id"])
         metrics.append(
             {
-                "key": f"euler:{MARKET_SENTORA}:{meta['asset']}:supply:cap_util",
-                "name": meta["name_supply"],
+                "key": pair["supply_key"],
+                "name": pair["name_supply"],
                 "value": _supply_cap_ratio(collateral_vault),
                 "unit": "ratio",
                 "adapter": "euler",
@@ -220,8 +268,8 @@ def fetch() -> List[Dict]:
         )
         metrics.append(
             {
-                "key": f"euler:{MARKET_SENTORA}:{meta['asset']}:borrow:cap_util",
-                "name": meta["name_borrow"],
+                "key": pair["borrow_key"],
+                "name": pair["name_borrow"],
                 "value": _borrow_cap_ratio(debt_vault),
                 "unit": "ratio",
                 "adapter": "euler",
