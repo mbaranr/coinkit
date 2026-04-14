@@ -6,6 +6,7 @@ from adapters.defi.silo import fetch as fetch_silo
 from adapters.defi.euler import fetch as fetch_euler, SENTORA_CAP_PAIRS
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
+from adapters.defi.compound import fetch as fetch_compound
 from adapters.gov.metadao import fetch as fetch_metadao
 from adapters.defi.jupiter import fetch as fetch_jupiter
 
@@ -33,6 +34,7 @@ def run_once() -> List[Dict]:
         fetch_euler,
         fetch_aave,
         fetch_dolomite,
+        fetch_compound,
         fetch_metadao,
         fetch_jupiter,
     ]

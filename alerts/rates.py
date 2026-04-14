@@ -73,6 +73,29 @@ def handle_rate_metric(
             unit=unit,
         )
 
+    # minor alert for Aave/Compound rates at 0.1% threshold
+    elif abs_delta >= (MINOR_CHANGE / 10) and adapter in ("aave", "compound") and unit == "rate":
+        alerts.append(
+            {
+                "category": "rates",
+                "level": "minor",
+                "metric_key": key,
+                "adapter": adapter,
+                "message": (
+                    f":smirk_cat: {direction} {name} moved ≥ 0.1%\n"
+                    f"Anchor: {anchor:.2%}\n"
+                    f"Current: {value:.2%}"
+                ),
+            }
+        )
+
+        record_sample(
+            metric_key=anchor_key,
+            name=f"{name} (anchor)",
+            value=value,
+            unit=unit,
+        )
+
     # minor alert for Jupiter rates at 0.5% threshold
     elif abs_delta >= (MINOR_CHANGE / 2) and adapter == "jupiter" and unit == "rate":
         alerts.append(

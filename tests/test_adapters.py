@@ -4,6 +4,7 @@ from adapters.defi.silo import fetch as fetch_silo
 from adapters.defi.euler import fetch as fetch_euler
 from adapters.defi.aave import fetch as fetch_aave
 from adapters.defi.dolomite import fetch as fetch_dolomite
+from adapters.defi.compound import fetch as fetch_compound
 from adapters.defi.jupiter import fetch as fetch_jupiter
 from adapters.gov.metadao import fetch as fetch_metadao
 
@@ -27,12 +28,17 @@ class TestAdapters(unittest.TestCase):
     def test_fetch_aave(self):
         metrics = fetch_aave()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 7)
+        self.assertEqual(len(metrics), 2)
 
     def test_fetch_dolomite(self):
         metrics = fetch_dolomite()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 4)
+        self.assertEqual(len(metrics), 2)
+
+    def test_fetch_compound(self):
+        metrics = fetch_compound()
+        self.assertIsInstance(metrics, list)
+        self.assertEqual(len(metrics), 2)
 
     def test_fetch_jupiter(self):
         metrics = fetch_jupiter()

@@ -11,14 +11,14 @@ TARGETS = {
         "key": "dolomite:usdc:borrow:rate",
         "name": "Dolomite USDC Borrow APR",
     },
-    "BYUSD": {
-        "key": "dolomite:byusd:borrow:rate",
-        "name": "Dolomite BYUSD Borrow APR",
-    },
-    "rUSD": {
-        "key": "dolomite:rusd:borrow:rate",
-        "name": "Dolomite rUSD Borrow APR",
-    },
+    # "BYUSD": {
+    #     "key": "dolomite:byusd:borrow:rate",
+    #     "name": "Dolomite BYUSD Borrow APR",
+    # },
+    # "rUSD": {
+    #     "key": "dolomite:rusd:borrow:rate",
+    #     "name": "Dolomite rUSD Borrow APR",
+    # },
     "USDT": {
         "key": "dolomite:usdt:borrow:rate",
         "name": "Dolomite USDT Borrow APR",

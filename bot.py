@@ -43,6 +43,7 @@ ADAPTER_CHANNEL_ENV = {
     "metadao": "METADAO_CHANNEL_ID",
     "dolomite": "DOLOMITE_CHANNEL_ID",
     "aave": "AAVE_CHANNEL_ID",
+    "compound": "COMPOUND_CHANNEL_ID",
     "jupiter": "JUPITER_CHANNEL_ID",
 }
 
@@ -213,6 +214,10 @@ async def info(ctx):
         "I sniff metrics and discrete events every 5 minutes.\n"
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
+        "Rate alert thresholds:\n"
+        "Aave / Compound: ≥ 0.1%\n"
+        "Jupiter: ≥ 0.5%\n"
+        "All others: ≥ 1% (minor), ≥ 10% (major)\n\n"
         "GitHub: https://github.com/mbaranr/coinkit"
     )
 
