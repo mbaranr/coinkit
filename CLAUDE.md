@@ -9,9 +9,9 @@ bot.py               Discord entrypoint, commands, alert loop
 engine.py            Orchestrates fetchers, records samples, dispatches alerts
 adapters/*.py        One module per data source
 alerts.py            Cap / rate / ICO alert logic and thresholds
-db.py                sqlite state (state.db)
+db.py                sqlite state (state.db); also exposes purge_keys()
 httputil.py          Shared HTTP helpers (get_json, post_json, to_float)
-purge_metrics.py     CLI: remove metric keys from state.db
+scripts/*.py         Maintenance CLIs (purge_metrics.py removes keys from state.db)
 tests.py             Unit tests + live-network adapter tests
 ```
 

@@ -63,7 +63,8 @@ engine.py            Polls adapters, records samples, evaluates alerts
 adapters/*.py        One module per data source
 alerts.py            Cap / rate / ICO alert logic
 db.py                sqlite-backed state (state.db)
-purge_metrics.py     Maintenance: remove metric keys
+httputil.py          Shared HTTP helpers (get_json, post_json, to_float)
+scripts/*.py         Maintenance CLIs (e.g. purge_metrics.py)
 tests.py             Unit + live-network tests
 ```
 

@@ -220,3 +220,26 @@ def mark_ico_released(block_id: str, ts: Optional[int] = None):
             (block_id, ts),
         )
         conn.commit()
+
+
+def purge_keys(db_path: str, keys: List[str]) -> Dict[str, Dict[str, int]]:
+    """
+    Delete each key (and its :anchor) from metrics and subscriptions.
+    Returns a summary: {key: {metrics: N, subscriptions: N}}.
+    """
+    results: Dict[str, Dict[str, int]] = {}
+    with sqlite3.connect(db_path) as conn:
+        for key in keys:
+            targets = [key, f"{key}:anchor"]
+            metrics_deleted = 0
+            subs_deleted = 0
+            for target in targets:
+                cur = conn.execute("DELETE FROM metrics WHERE key = ?", (target,))
+                metrics_deleted += cur.rowcount
+                cur = conn.execute(
+                    "DELETE FROM subscriptions WHERE metric_key = ?", (target,)
+                )
+                subs_deleted += cur.rowcount
+            conn.commit()
+            results[key] = {"metrics": metrics_deleted, "subscriptions": subs_deleted}
+    return results

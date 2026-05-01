@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from engine import ADAPTERS
-from purge_metrics import purge_keys
+from db import purge_keys
 
 
 REQUIRED_METRIC_KEYS = {"key", "name", "value", "unit", "adapter"}
