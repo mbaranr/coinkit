@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 from github import Github, Auth, GithubException
 
 from engine import run_once
-from db.repo import (
+from db import (
     list_metrics,
     add_subscription,
     remove_subscription,

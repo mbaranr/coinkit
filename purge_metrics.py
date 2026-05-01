@@ -3,7 +3,7 @@ import sqlite3
 import os
 import sys
 
-DB_FILE = os.path.join(os.path.dirname(__file__), "..", "state.db")
+DB_FILE = os.path.join(os.path.dirname(__file__), "state.db")
 
 
 def purge_keys(db_path: str, keys: list[str]) -> dict[str, dict[str, int]]:

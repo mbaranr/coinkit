@@ -1,0 +1,13 @@
+[project]
+name = "coinkit"
+version = "0.1.0"
+description = "A minimal Discord bot for monitoring DeFi signals."
+requires-python = ">=3.10"
+dependencies = [
+    "discord.py",
+    "python-dotenv",
+    "requests",
+    "PyGithub",
+    "python-dateutil",
+    "pycryptodome",
+]

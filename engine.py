@@ -1,18 +1,21 @@
 from typing import List, Dict, Optional
 
-from db.repo import init_db, record_sample, get_last
+from db import init_db, record_sample, get_last
 
-from adapters.defi.silo import fetch as fetch_silo
-from adapters.defi.euler import fetch as fetch_euler, SENTORA_CAP_PAIRS
-from adapters.defi.aave import fetch as fetch_aave
-from adapters.defi.dolomite import fetch as fetch_dolomite
-from adapters.defi.compound import fetch as fetch_compound
-from adapters.gov.metadao import fetch as fetch_metadao
-from adapters.defi.jupiter import fetch as fetch_jupiter
+from adapters.silo import fetch as fetch_silo
+from adapters.euler import fetch as fetch_euler, SENTORA_CAP_PAIRS
+from adapters.aave import fetch as fetch_aave
+from adapters.dolomite import fetch as fetch_dolomite
+from adapters.compound import fetch as fetch_compound
+from adapters.metadao import fetch as fetch_metadao
+from adapters.jupiter import fetch as fetch_jupiter
 
-from alerts.caps import handle_caps_metric, handle_paired_caps
-from alerts.rates import handle_rate_metric
-from alerts.icos import handle_ico_schedule
+from alerts import (
+    handle_caps_metric,
+    handle_paired_caps,
+    handle_rate_metric,
+    handle_ico_schedule,
+)
 
 
 def run_once() -> List[Dict]:
