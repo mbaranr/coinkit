@@ -3,56 +3,43 @@ import sqlite3
 import tempfile
 import unittest
 
-from adapters.silo import fetch as fetch_silo
-from adapters.euler import fetch as fetch_euler
-from adapters.aave import fetch as fetch_aave
-from adapters.dolomite import fetch as fetch_dolomite
-from adapters.compound import fetch as fetch_compound
-from adapters.jupiter import fetch as fetch_jupiter
-from adapters.metadao import fetch as fetch_metadao
-
+from engine import ADAPTERS
 from purge_metrics import purge_keys
 
 
+REQUIRED_METRIC_KEYS = {"key", "name", "value", "unit", "adapter"}
+ALLOWED_UNITS = {"rate", "ratio", "json"}
+
+
 class TestAdapters(unittest.TestCase):
-    def test_fetch_silo(self):
-        metrics = fetch_silo()
-        print(metrics[0])
+    """
+    Shape-only contract tests. Hits live APIs (requires internet).
+    Adding or removing a metric inside an adapter does not break these.
+    """
+    pass
+
+
+def _make_adapter_test(adapter_name, mod):
+    def test(self):
+        metrics = mod.fetch()
         self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 1)
+        self.assertGreater(len(metrics), 0, f"{adapter_name} returned no metrics")
 
-    def test_fetch_euler(self):
-        metrics = fetch_euler()
+        for m in metrics:
+            self.assertIsInstance(m, dict)
+            self.assertGreaterEqual(set(m), REQUIRED_METRIC_KEYS)
+            self.assertIn(m["unit"], ALLOWED_UNITS)
+            self.assertEqual(m["adapter"], adapter_name)
 
-        for metrc in metrics:
-            print(metrc)
+            if m["unit"] == "json":
+                self.assertIsInstance(m["value"], list)
+            else:
+                self.assertIsInstance(m["value"], (int, float))
+    return test
 
-        self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 14)
 
-    def test_fetch_aave(self):
-        metrics = fetch_aave()
-        self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 2)
-
-    def test_fetch_dolomite(self):
-        metrics = fetch_dolomite()
-        self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 2)
-
-    def test_fetch_compound(self):
-        metrics = fetch_compound()
-        self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 2)
-
-    def test_fetch_jupiter(self):
-        metrics = fetch_jupiter()
-        self.assertIsInstance(metrics, list)
-        self.assertEqual(len(metrics), 5)
-
-    def test_fetch_metadao(self):
-        metrics = fetch_metadao()
-        self.assertIsInstance(metrics, list)
+for _name, _mod in ADAPTERS.items():
+    setattr(TestAdapters, f"test_fetch_{_name}", _make_adapter_test(_name, _mod))
 
 
 def _make_db(path: str):

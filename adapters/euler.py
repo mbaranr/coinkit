@@ -52,7 +52,7 @@ VAULT_USDC_RLUSD      = "0x9bD52F2805c6aF014132874124686e7b248c2Cbb"
 VAULT_USDC_PYUSD      = "0xAB2726DAf820Aa9270D14Db9B18c8d187cbF2f30"
 
 
-SENTORA_CAP_PAIRS = [
+PAIRED_CAPS = [
     {
         "asset": "syrupusdc:rlusd",
         "pair_name": "Euler Sentora syrupUSDC/RLUSD",
@@ -267,12 +267,12 @@ def fetch() -> List[Dict]:
     # ── Ethereum: Sentora paired cap metrics ─────────────────────────────
     unique_vault_ids = list({
         vid
-        for pair in SENTORA_CAP_PAIRS
+        for pair in PAIRED_CAPS
         for vid in (pair["collateral_vault_id"], pair["debt_vault_id"])
     })
     eth_vaults = _rpc_batch(ETHEREUM_CHAIN_ID, unique_vault_ids)
 
-    for pair in SENTORA_CAP_PAIRS:
+    for pair in PAIRED_CAPS:
         coll_words = eth_vaults[pair["collateral_vault_id"].lower()]
         debt_words = eth_vaults[pair["debt_vault_id"].lower()]
 

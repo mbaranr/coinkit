@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands, tasks
 from github import Github, Auth, GithubException
 
-from engine import run_once
+from engine import ADAPTERS, run_once
 from db import (
     list_metrics,
     add_subscription,
@@ -37,15 +37,8 @@ GITHUB_REPO = os.getenv("GITHUB_REPO")
 
 ENGINE_ERROR_DM_USER_ID = int(os.getenv("ENGINE_ERROR_DM_USER_ID", "0"))
 
-ADAPTER_CHANNEL_ENV = {
-    "euler": "EULER_CHANNEL_ID",
-    "silo": "SILO_CHANNEL_ID",
-    "metadao": "METADAO_CHANNEL_ID",
-    "dolomite": "DOLOMITE_CHANNEL_ID",
-    "aave": "AAVE_CHANNEL_ID",
-    "compound": "COMPOUND_CHANNEL_ID",
-    "jupiter": "JUPITER_CHANNEL_ID",
-}
+def _channel_env(adapter_name: str) -> str:
+    return f"{adapter_name.upper()}_CHANNEL_ID"
 
 
 def _read_channel_id(env_name: str) -> int:
@@ -59,8 +52,8 @@ def _read_channel_id(env_name: str) -> int:
 
 
 ADAPTER_CHANNELS = {
-    adapter: _read_channel_id(env_name)
-    for adapter, env_name in ADAPTER_CHANNEL_ENV.items()
+    name: _read_channel_id(_channel_env(name))
+    for name in ADAPTERS
 }
 
 if not TOKEN:
@@ -68,7 +61,7 @@ if not TOKEN:
 
 for name, cid in ADAPTER_CHANNELS.items():
     if cid == 0:
-        raise RuntimeError(f"{ADAPTER_CHANNEL_ENV[name]} not set")
+        raise RuntimeError(f"{_channel_env(name)} not set")
 
 if ENGINE_ERROR_DM_USER_ID == 0:
     raise RuntimeError("ENGINE_ERROR_DM_USER_ID not set")

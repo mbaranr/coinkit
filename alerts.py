@@ -11,8 +11,15 @@ from db import (
 
 
 CAP_FULL_THRESHOLD = 0.99995   # 99.995%
-MINOR_CHANGE = 0.01   # 1%
-MAJOR_CHANGE = 0.10   # 10%
+
+# Rate change thresholds. Edit these when the trader requests a tweak.
+RATE_MAJOR = 0.10   # 10%, applies to all adapters
+RATE_MINOR_DEFAULT = 0.01   # 1%
+RATE_MINOR = {
+    "aave":     0.001,   # 0.1%
+    "compound": 0.001,   # 0.1%
+    "jupiter":  0.005,   # 0.5%
+}
 
 
 # Caps
@@ -164,97 +171,35 @@ def handle_rate_metric(
     abs_delta = abs(delta)
     direction = "⬆️" if delta > 0 else "⬇️"
 
-    # major alert
-    if abs_delta >= MAJOR_CHANGE:
-        alerts.append(
-            {
-                "category": "rates",
-                "level": "major",
-                "metric_key": key,
-                "adapter": adapter,
-                "message": (
-                    f":scream_cat: {direction} {name} moved ≥ 10%\n"
-                    f"Anchor: {anchor:.2%}\n"
-                    f"Current: {value:.2%}"
-                ),
-            }
-        )
+    minor_threshold = RATE_MINOR.get(adapter, RATE_MINOR_DEFAULT)
 
-        record_sample(
-            metric_key=anchor_key,
-            name=f"{name} (anchor)",
-            value=value,
-            unit=unit,
-        )
+    if abs_delta >= RATE_MAJOR:
+        level, threshold, icon = "major", RATE_MAJOR, ":scream_cat:"
+    elif abs_delta >= minor_threshold:
+        level, threshold, icon = "minor", minor_threshold, ":smirk_cat:"
+    else:
+        return alerts
 
-    # minor alert for Aave/Compound rates at 0.1% threshold
-    elif abs_delta >= (MINOR_CHANGE / 10) and adapter in ("aave", "compound") and unit == "rate":
-        alerts.append(
-            {
-                "category": "rates",
-                "level": "minor",
-                "metric_key": key,
-                "adapter": adapter,
-                "message": (
-                    f":smirk_cat: {direction} {name} moved ≥ 0.1%\n"
-                    f"Anchor: {anchor:.2%}\n"
-                    f"Current: {value:.2%}"
-                ),
-            }
-        )
+    alerts.append(
+        {
+            "category": "rates",
+            "level": level,
+            "metric_key": key,
+            "adapter": adapter,
+            "message": (
+                f"{icon} {direction} {name} moved ≥ {threshold * 100:g}%\n"
+                f"Anchor: {anchor:.2%}\n"
+                f"Current: {value:.2%}"
+            ),
+        }
+    )
 
-        record_sample(
-            metric_key=anchor_key,
-            name=f"{name} (anchor)",
-            value=value,
-            unit=unit,
-        )
-
-    # minor alert for Jupiter rates at 0.5% threshold
-    elif abs_delta >= (MINOR_CHANGE / 2) and adapter == "jupiter" and unit == "rate":
-        alerts.append(
-            {
-                "category": "rates",
-                "level": "minor",
-                "metric_key": key,
-                "adapter": adapter,
-                "message": (
-                    f":smirk_cat: {direction} {name} moved ≥ 0.5%\n"
-                    f"Anchor: {anchor:.2%}\n"
-                    f"Current: {value:.2%}"
-                ),
-            }
-        )
-
-        record_sample(
-            metric_key=anchor_key,
-            name=f"{name} (anchor)",
-            value=value,
-            unit=unit,
-        )
-
-    # minor alert
-    elif abs_delta >= MINOR_CHANGE:
-        alerts.append(
-            {
-                "category": "rates",
-                "level": "minor",
-                "metric_key": key,
-                "adapter": adapter,
-                "message": (
-                    f":smirk_cat: {direction} {name} moved ≥ 1%\n"
-                    f"Anchor: {anchor:.2%}\n"
-                    f"Current: {value:.2%}"
-                ),
-            }
-        )
-
-        record_sample(
-            metric_key=anchor_key,
-            name=f"{name} (anchor)",
-            value=value,
-            unit=unit,
-        )
+    record_sample(
+        metric_key=anchor_key,
+        name=f"{name} (anchor)",
+        value=value,
+        unit=unit,
+    )
 
     return alerts
 

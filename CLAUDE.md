@@ -26,7 +26,11 @@ tests.py             Unit tests + live-network adapter tests
 
 ## Adapter contract
 
-Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter`.
+Adapters are auto-discovered: every module under `adapters/` is loaded by `engine._discover_adapters` at import time. Adding a new adapter means dropping `adapters/<name>.py` and setting `<NAME>_CHANNEL_ID` in `.env`. No engine, bot, or test edits required.
+
+Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter` (where `adapter` matches the module filename).
+
+Optional: an adapter can expose `PAIRED_CAPS = [...]` to declare paired supply/borrow caps that should fire a major alert when freed simultaneously. The engine aggregates `PAIRED_CAPS` across all adapters.
 
 `engine.run_once` routes by `unit`:
 - `"ratio"` to cap alerts
@@ -35,13 +39,12 @@ Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have
 
 ## Where volatile config lives
 
-Thresholds, intervals, channel mappings, and the adapter set change often. Read the source rather than assuming:
+Thresholds, intervals, and pairings change often. Read the source rather than assuming:
 
-- Alert thresholds and per-adapter rate rules: top of `alerts.py` and inside `handle_rate_metric`.
+- Rate thresholds (per-adapter and default): `RATE_MINOR`, `RATE_MINOR_DEFAULT`, `RATE_MAJOR` at the top of `alerts.py`.
 - Cap-full threshold and paired-cap logic: `CAP_FULL_THRESHOLD` and `handle_paired_caps` in `alerts.py`.
 - Polling interval: `ALERT_INTERVAL_SECONDS` in `bot.py`.
-- Adapter list and required `*_CHANNEL_ID` env vars: `ADAPTER_CHANNEL_ENV` in `bot.py`.
-- Sentora cap pairs: `SENTORA_CAP_PAIRS` in `adapters/euler.py`.
+- Paired-cap configs: `PAIRED_CAPS` inside the adapter that owns them (e.g. `adapters/euler.py`).
 - DB schema: `init_db` in `db.py`.
 
 ## Tests

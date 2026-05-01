@@ -1,21 +1,39 @@
-from typing import List, Dict, Optional
+import importlib
+import pkgutil
+from types import ModuleType
+from typing import Dict, List
 
-from db import init_db, record_sample, get_last
-
-from adapters.silo import fetch as fetch_silo
-from adapters.euler import fetch as fetch_euler, SENTORA_CAP_PAIRS
-from adapters.aave import fetch as fetch_aave
-from adapters.dolomite import fetch as fetch_dolomite
-from adapters.compound import fetch as fetch_compound
-from adapters.metadao import fetch as fetch_metadao
-from adapters.jupiter import fetch as fetch_jupiter
-
+import adapters as _adapters_pkg
+from db import get_last, record_sample
 from alerts import (
     handle_caps_metric,
+    handle_ico_schedule,
     handle_paired_caps,
     handle_rate_metric,
-    handle_ico_schedule,
 )
+
+
+def _discover_adapters() -> Dict[str, ModuleType]:
+    """
+    Auto-discover every module under adapters/. Each MUST expose
+    `fetch() -> list[dict]`. Optional: a `PAIRED_CAPS` list of pair configs.
+    """
+    out: Dict[str, ModuleType] = {}
+    for info in pkgutil.iter_modules(_adapters_pkg.__path__):
+        mod = importlib.import_module(f"adapters.{info.name}")
+        if not callable(getattr(mod, "fetch", None)):
+            raise RuntimeError(f"Adapter {info.name!r} missing required fetch() callable")
+        out[info.name] = mod
+    return out
+
+
+ADAPTERS: Dict[str, ModuleType] = _discover_adapters()
+
+PAIRED_CAPS: List[Dict] = [
+    pair
+    for mod in ADAPTERS.values()
+    for pair in getattr(mod, "PAIRED_CAPS", [])
+]
 
 
 def run_once() -> List[Dict]:
@@ -27,26 +45,19 @@ def run_once() -> List[Dict]:
     - Caps: state-based (full vs not full)
     - ICOs: scheduled + launch-day alerts
     """
-
     alerts: List[Dict] = []
-    cap_snapshots: Dict[str, tuple] = {}  # key -> (value, last_value) for paired checks
-    paired_keys = {key for pair in SENTORA_CAP_PAIRS for key in (pair["supply_key"], pair["borrow_key"])}
+    cap_snapshots: Dict[str, tuple] = {}
+    paired_keys = {
+        key
+        for pair in PAIRED_CAPS
+        for key in (pair["supply_key"], pair["borrow_key"])
+    }
 
-    fetchers = [
-        fetch_silo,
-        fetch_euler,
-        fetch_aave,
-        fetch_dolomite,
-        fetch_compound,
-        fetch_metadao,
-        fetch_jupiter,
-    ]
-
-    for fetcher in fetchers:
+    for adapter_name, mod in ADAPTERS.items():
         try:
-            metrics = fetcher()
+            metrics = mod.fetch()
         except Exception as e:
-            msg = f"Error fetching data from {fetcher.__module__.split('.')[-1]}: {e}"
+            msg = f"Error fetching data from {adapter_name}: {e}"
             print(msg)
             alerts.append(
                 {
@@ -113,7 +124,7 @@ def run_once() -> List[Dict]:
                     ),
                 )
 
-    for pair in SENTORA_CAP_PAIRS:
+    for pair in PAIRED_CAPS:
         sk, bk = pair["supply_key"], pair["borrow_key"]
         if sk in cap_snapshots and bk in cap_snapshots:
             s_val, s_last = cap_snapshots[sk]
