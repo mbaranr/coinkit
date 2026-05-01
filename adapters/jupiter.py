@@ -1,4 +1,4 @@
-import requests
+from httputil import get_json
 
 
 BASE_URL = "https://api.solana.fluid.io/v1/borrowing/vaults"
@@ -15,10 +15,7 @@ RATE_SCALE = 10_000
 
 
 def _fetch_vault(vault_id: int) -> dict:
-    url = f"{BASE_URL}/{vault_id}"
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    return r.json()
+    return get_json(f"{BASE_URL}/{vault_id}", timeout=15)
 
 
 def _extract_borrow_rate_decimal(vault_payload: dict) -> float:

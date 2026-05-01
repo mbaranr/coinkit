@@ -1,7 +1,8 @@
-import requests
 from typing import Dict, List
 
 from Crypto.Hash import keccak
+
+from httputil import post_json
 
 
 # ── RPC + VaultLens ──────────────────────────────────────────────────────────
@@ -164,9 +165,7 @@ def _rpc_batch(chain_id: int, vault_addresses: List[str]) -> Dict[str, List[int]
         })
 
     url = EULER_RPC_URL.format(chain_id=chain_id)
-    r = requests.post(url, json=batch, timeout=30)
-    r.raise_for_status()
-    responses = r.json()
+    responses = post_json(url, json=batch, timeout=30)
 
     results: Dict[str, List[int]] = {}
     for resp in responses:

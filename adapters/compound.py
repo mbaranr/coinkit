@@ -1,5 +1,6 @@
-import requests
-from typing import Any, Dict, List
+from typing import Dict, List
+
+from httputil import get_json, to_float
 
 
 SUMMARY_URL = "https://v3-api.compound.finance/market/{network}/{comet}/summary"
@@ -23,33 +24,21 @@ MARKETS = [
 ]
 
 
-def _to_float(x: Any) -> float:
-    if isinstance(x, (int, float)):
-        return float(x)
-    if isinstance(x, str):
-        return float(x)
-    raise TypeError(f"Cannot convert to float: {x}")
-
-
 def _fetch_borrow_apr(network: str, comet: str) -> float:
     url = SUMMARY_URL.format(network=network, comet=comet)
-    r = requests.get(url, timeout=20)
-    r.raise_for_status()
-    data = r.json()
+    data = get_json(url)
 
     if not isinstance(data, dict) or "borrow_apr" not in data:
         raise RuntimeError(f"Compound summary response missing borrow_apr for {network}/{comet}")
 
-    return _to_float(data["borrow_apr"])
+    return to_float(data["borrow_apr"])
 
 
 def _fetch_rewards_map() -> Dict[str, float]:
     """
     Returns a map of "chain_id:comet_lower" -> borrow_rewards_apr for WETH markets.
     """
-    r = requests.get(REWARDS_URL, timeout=20)
-    r.raise_for_status()
-    data = r.json()
+    data = get_json(REWARDS_URL)
 
     rewards: Dict[str, float] = {}
     for entry in data:
@@ -59,7 +48,7 @@ def _fetch_rewards_map() -> Dict[str, float]:
         chain_id = entry.get("chain_id")
         comet_addr = entry.get("comet", {}).get("address", "").lower()
         apr = entry.get("borrow_rewards_apr", "0")
-        rewards[f"{chain_id}:{comet_addr}"] = _to_float(apr)
+        rewards[f"{chain_id}:{comet_addr}"] = to_float(apr)
 
     return rewards
 

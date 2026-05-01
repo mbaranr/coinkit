@@ -1,4 +1,5 @@
 import importlib
+import os
 import pkgutil
 from types import ModuleType
 from typing import Dict, List
@@ -13,13 +14,24 @@ from alerts import (
 )
 
 
+def _disabled_set() -> set:
+    raw = os.getenv("DISABLED_ADAPTERS", "")
+    return {n.strip() for n in raw.split(",") if n.strip()}
+
+
 def _discover_adapters() -> Dict[str, ModuleType]:
     """
     Auto-discover every module under adapters/. Each MUST expose
     `fetch() -> list[dict]`. Optional: a `PAIRED_CAPS` list of pair configs.
+
+    Adapters listed in the DISABLED_ADAPTERS env (comma-separated) are skipped.
     """
+    disabled = _disabled_set()
     out: Dict[str, ModuleType] = {}
     for info in pkgutil.iter_modules(_adapters_pkg.__path__):
+        if info.name in disabled:
+            print(f"[engine] adapter {info.name!r} disabled via DISABLED_ADAPTERS")
+            continue
         mod = importlib.import_module(f"adapters.{info.name}")
         if not callable(getattr(mod, "fetch", None)):
             raise RuntimeError(f"Adapter {info.name!r} missing required fetch() callable")
@@ -77,7 +89,7 @@ def run_once() -> List[Dict]:
 
             last_value = get_last(key)
 
-            if unit == "json" and key == "metadao:icos:scheduled":
+            if unit == "json":
                 # record a lightweight count so the toy list includes this key
                 record_sample(
                     metric_key=key,

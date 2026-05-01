@@ -1,5 +1,6 @@
-import requests
-from typing import Any, Dict, List
+from typing import Dict, List
+
+from httputil import post_json, to_float
 
 
 AAVE_V3_GRAPHQL_URL = "https://api.v3.aave.com/graphql"
@@ -48,44 +49,20 @@ query HubAssets {
 """
 
 
-def _to_float(x: Any) -> float:
-    if isinstance(x, (int, float)):
-        return float(x)
-    if isinstance(x, str):
-        return float(x)
-    raise TypeError(f"Cannot convert to float: {x}")
-
-
 def _fetch_v3_borrow_apy() -> float:
     query = QUERY_V3_BORROW_APY % (ETHEREUM_CHAIN_ID, ETHEREUM_V3_POOL, WETH_ADDRESS)
-
-    r = requests.post(
-        AAVE_V3_GRAPHQL_URL,
-        json={"query": query},
-        headers={"Content-Type": "application/json"},
-        timeout=20,
-    )
-    r.raise_for_status()
-    payload = r.json()
+    payload = post_json(AAVE_V3_GRAPHQL_URL, json={"query": query})
 
     reserve = payload.get("data", {}).get("reserve")
     if not reserve:
         raise RuntimeError("Aave V3 response missing reserve for WETH")
 
-    return _to_float(reserve["borrowInfo"]["apy"]["value"])
+    return to_float(reserve["borrowInfo"]["apy"]["value"])
 
 
 def _fetch_v4_borrow_apy() -> float:
     query = QUERY_V4_HUB_ASSETS % (V4_CORE_HUB_ADDRESS, ETHEREUM_CHAIN_ID)
-
-    r = requests.post(
-        AAVE_V4_GRAPHQL_URL,
-        json={"query": query},
-        headers={"Content-Type": "application/json"},
-        timeout=20,
-    )
-    r.raise_for_status()
-    payload = r.json()
+    payload = post_json(AAVE_V4_GRAPHQL_URL, json={"query": query})
 
     hub_assets = payload.get("data", {}).get("hubAssets")
     if not hub_assets:
@@ -94,7 +71,7 @@ def _fetch_v4_borrow_apy() -> float:
     weth = WETH_ADDRESS.lower()
     for asset in hub_assets:
         if asset["underlying"]["address"].lower() == weth:
-            return _to_float(asset["summary"]["borrowApy"]["value"])
+            return to_float(asset["summary"]["borrowApy"]["value"])
 
     raise RuntimeError("Aave V4 Core hub does not contain WETH")
 

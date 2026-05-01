@@ -1,5 +1,6 @@
-import requests
-from typing import Any, Dict, List
+from typing import Dict, List
+
+from httputil import get_json, to_float
 
 
 DOLOMITE_INTEREST_RATES_URL = (
@@ -26,14 +27,6 @@ TARGETS = {
 }
 
 
-def _to_float(x: Any) -> float:
-    if isinstance(x, (int, float)):
-        return float(x)
-    if isinstance(x, str):
-        return float(x)
-    raise TypeError(f"Cannot convert to float: {x}")
-
-
 def fetch() -> List[Dict]:
     """
     Fetch Dolomite borrow APRs (Berachain):
@@ -44,9 +37,7 @@ def fetch() -> List[Dict]:
 
     Returns a list of metric dicts.
     """
-    r = requests.get(DOLOMITE_INTEREST_RATES_URL, timeout=20)
-    r.raise_for_status()
-    data = r.json()
+    data = get_json(DOLOMITE_INTEREST_RATES_URL)
 
     rates = data.get("interestRates")
     if not isinstance(rates, list) or not rates:
@@ -61,7 +52,7 @@ def fetch() -> List[Dict]:
             borrow = row.get("borrowInterestRate")
             if borrow is None:
                 raise RuntimeError(f"Dolomite response missing borrowInterestRate for {symbol}")
-            found[symbol] = _to_float(borrow)
+            found[symbol] = to_float(borrow)
 
     missing = [sym for sym in TARGETS.keys() if sym not in found]
     if missing:

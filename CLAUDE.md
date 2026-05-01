@@ -10,15 +10,14 @@ engine.py            Orchestrates fetchers, records samples, dispatches alerts
 adapters/*.py        One module per data source
 alerts.py            Cap / rate / ICO alert logic and thresholds
 db.py                sqlite state (state.db)
+httputil.py          Shared HTTP helpers (get_json, post_json, to_float)
 purge_metrics.py     CLI: remove metric keys from state.db
 tests.py             Unit tests + live-network adapter tests
 ```
 
-**DO NOT** reintroduce subpackages (no `alerts/`, `db/`, `scripts/`, `adapters/defi/`, etc.). The flat structure is deliberate.
-
 ## Tooling
 
-`uv` for everything. **YOU MUST use `uv run`** for any Python invocation. There is no `requirements.txt`; `uv.lock` is committed.
+`uv` for everything. **YOU MUST use `uv run`** for any Python invocation. 
 
 - `uv sync`, `uv add <pkg>`, `uv remove <pkg>`
 - `uv run python bot.py`
@@ -28,14 +27,16 @@ tests.py             Unit tests + live-network adapter tests
 
 Adapters are auto-discovered: every module under `adapters/` is loaded by `engine._discover_adapters` at import time. Adding a new adapter means dropping `adapters/<name>.py` and setting `<NAME>_CHANNEL_ID` in `.env`. No engine, bot, or test edits required.
 
-Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter` (where `adapter` matches the module filename).
+To temporarily mute a misbehaving adapter without touching code, set `DISABLED_ADAPTERS=foo,bar` in `.env`.
+
+Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter` (where `adapter` matches the module filename). Use `httputil.get_json` / `httputil.post_json` / `httputil.to_float` instead of rolling raw `requests` calls.
 
 Optional: an adapter can expose `PAIRED_CAPS = [...]` to declare paired supply/borrow caps that should fire a major alert when freed simultaneously. The engine aggregates `PAIRED_CAPS` across all adapters.
 
 `engine.run_once` routes by `unit`:
 - `"ratio"` to cap alerts
-- numeric (e.g. `"rate"`) to rate alerts
 - `"json"` to ICO alerts
+- everything else (numeric) to rate alerts
 
 ## Where volatile config lives
 

@@ -3,8 +3,9 @@ import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-import requests
 from dateutil import parser as dtparser
+
+from httputil import post_json
 
 
 URL = "https://www.idontbelieve.link/api/v3/queryCollection?src=initial_load"
@@ -63,20 +64,6 @@ GOALS_PROP = "QwBV"
 LAUNCH_PREFIX_RE = re.compile(r"^\s*Launch Date:\s*", re.IGNORECASE)
 
 logger = logging.getLogger(__name__)
-
-
-def _post_json(url: str, payload: Dict[str, Any], *, timeout: int = 30) -> Dict[str, Any]:
-    r = requests.post(
-        url,
-        json=payload,
-        headers={"content-type": "application/json"},
-        timeout=timeout,
-    )
-    r.raise_for_status()
-    data = r.json()
-    if not isinstance(data, dict):
-        raise RuntimeError("Unexpected response type (expected JSON object)")
-    return data
 
 
 def _richtext_to_str(v: Any) -> str:
@@ -264,7 +251,7 @@ def fetch() -> List[Dict[str, Any]]:
     Metric value is a list[dict] (each dict describes one scheduled ICO).
     """
     
-    data = _post_json(URL, PAYLOAD, timeout=30)
+    data = post_json(URL, json=PAYLOAD, timeout=30)
     
     scheduled = _extract_scheduled_icos(data)
 

@@ -1,4 +1,4 @@
-import requests
+from httputil import post_json
 
 SILO_MARKET_URL = "https://app.silo.finance/api/lending-market"
 SILO_MARKET_ID = "avalanche-0x33fAdB3dB0A1687Cdd4a55AB0afa94c8102856A1"
@@ -11,13 +11,11 @@ def fetch() -> list[dict]:
 
     Returns a list of metric dicts.
     """
-    r = requests.post(
+    data = post_json(
         SILO_MARKET_URL,
         json={"marketId": SILO_MARKET_ID, "account": "0x0000000000000000000000000000000000000000"},
         timeout=15,
     )
-    r.raise_for_status()
-    data = r.json()
 
     silo1 = data["silo1"]  # USDC silo
     raw_apr = int(silo1["borrowBaseApr"])

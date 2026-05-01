@@ -56,15 +56,15 @@ ADAPTER_CHANNELS = {
     for name in ADAPTERS
 }
 
-if not TOKEN:
-    raise RuntimeError("DISCORD_TOKEN not set")
 
-for name, cid in ADAPTER_CHANNELS.items():
-    if cid == 0:
-        raise RuntimeError(f"{_channel_env(name)} not set")
-
-if ENGINE_ERROR_DM_USER_ID == 0:
-    raise RuntimeError("ENGINE_ERROR_DM_USER_ID not set")
+def _validate_env() -> None:
+    if not TOKEN:
+        raise RuntimeError("DISCORD_TOKEN not set")
+    for name, cid in ADAPTER_CHANNELS.items():
+        if cid == 0:
+            raise RuntimeError(f"{_channel_env(name)} not set")
+    if ENGINE_ERROR_DM_USER_ID == 0:
+        raise RuntimeError("ENGINE_ERROR_DM_USER_ID not set")
 
 
 intents = discord.Intents.default()
@@ -356,4 +356,5 @@ async def ping(ctx):
 
 
 if __name__ == "__main__":
+    _validate_env()
     bot.run(TOKEN)
