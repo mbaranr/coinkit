@@ -21,12 +21,25 @@ VAULT_LENS = {
 # ── VaultInfoFull struct layout (fixed-position word indices) ────────────────
 # Returned inside an outer ABI tuple, so word 0 = outer offset (32).
 # Words below are 1-indexed from the struct start.
+#
+# These offsets are pinned to the VaultLens contract referenced in
+# `VAULT_LENS` above. Source of truth: euler-xyz/euler-interfaces.
+# If Euler ships a new VaultLens with extra fields, every offset here shifts
+# and decoded values become garbage. The range guards in the field extractors
+# below will surface that as a clear engine error rather than silently
+# polluting the alert stream.
 _W_TOTAL_BORROWED = 16
 _W_TOTAL_ASSETS   = 17
 _W_SUPPLY_CAP     = 26
 _W_BORROW_CAP     = 27
 # irmInfo is a dynamic struct; its offset lives at word 40.
 _W_IRM_OFFSET     = 40
+
+# Sanity bounds. Tripping any of these almost certainly means the struct
+# layout changed; raise loudly so we notice instead of clamping garbage.
+_MAX_PLAUSIBLE_APY        = 10.0   # 1000%
+_MAX_PLAUSIBLE_CAP_RATIO  = 2.0    # caps can briefly exceed 1.0 from accrual
+_MAX_PLAUSIBLE_IRI_LEN    = 1000   # bounded sanity on dynamic array
 
 # ── Chains ───────────────────────────────────────────────────────────────────
 AVALANCHE_CHAIN_ID = 43114
@@ -204,28 +217,41 @@ def _borrow_apy(words: List[int]) -> float:
     iri_start = irm_start + iri_byte_offset // 32
 
     arr_len = words[iri_start]
-    if arr_len == 0:
-        raise RuntimeError("interestRateInfo array is empty")
+    if not 1 <= arr_len <= _MAX_PLAUSIBLE_IRI_LEN:
+        raise RuntimeError(
+            f"Euler interestRateInfo array length {arr_len} outside plausible "
+            f"range [1, {_MAX_PLAUSIBLE_IRI_LEN}]; ABI layout may have changed"
+        )
 
     # borrowAPY is the 4th field (index 3) in InterestRateInfo
     borrow_apy_raw = words[iri_start + 1 + 3]
-    return borrow_apy_raw / EULER_APY_SCALE
+    apy = borrow_apy_raw / EULER_APY_SCALE
+    if not 0 <= apy <= _MAX_PLAUSIBLE_APY:
+        raise RuntimeError(
+            f"Euler decoded borrowAPY {apy:.4f} outside plausible range "
+            f"[0, {_MAX_PLAUSIBLE_APY}]; ABI layout may have changed"
+        )
+    return apy
+
+
+def _cap_ratio(used: int, cap: int, label: str) -> float:
+    if cap <= 0:
+        return 0.0
+    raw = used / cap
+    if not 0 <= raw <= _MAX_PLAUSIBLE_CAP_RATIO:
+        raise RuntimeError(
+            f"Euler decoded {label} ratio {raw:.4f} outside plausible range "
+            f"[0, {_MAX_PLAUSIBLE_CAP_RATIO}]; ABI layout may have changed"
+        )
+    return min(raw, 1.0)
 
 
 def _supply_cap_ratio(words: List[int]) -> float:
-    total_assets = words[_W_TOTAL_ASSETS]
-    supply_cap = words[_W_SUPPLY_CAP]
-    if supply_cap <= 0:
-        return 0.0
-    return min(total_assets / supply_cap, 1.0)
+    return _cap_ratio(words[_W_TOTAL_ASSETS], words[_W_SUPPLY_CAP], "supply")
 
 
 def _borrow_cap_ratio(words: List[int]) -> float:
-    total_borrowed = words[_W_TOTAL_BORROWED]
-    borrow_cap = words[_W_BORROW_CAP]
-    if borrow_cap <= 0:
-        return 0.0
-    return min(total_borrowed / borrow_cap, 1.0)
+    return _cap_ratio(words[_W_TOTAL_BORROWED], words[_W_BORROW_CAP], "borrow")
 
 
 # ── Public fetch ─────────────────────────────────────────────────────────────
