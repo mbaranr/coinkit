@@ -2,6 +2,8 @@
 
 A minimal Discord bot for monitoring DeFi signals.
 
+## What it does
+
 CoinKit polls a handful of DeFi protocols every 5 minutes and posts alerts to per-protocol Discord channels:
 
 - **Cap utilization**: alerts when supply or borrow caps are reached or freed.
