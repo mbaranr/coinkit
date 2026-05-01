@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git branch)",
+      "Bash(git branch:*)",
+      "Bash(git remote:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git stash list)",
+      "Bash(git stash show:*)",
+      "Bash(git add:*)",
+
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(tree:*)",
+
+      "Bash(uv sync)",
+      "Bash(uv sync:*)",
+      "Bash(uv lock)",
+      "Bash(uv lock:*)",
+      "Bash(uv add:*)",
+      "Bash(uv remove:*)",
+      "Bash(uv tree)",
+      "Bash(uv tree:*)",
+      "Bash(uv run:*)"
+    ]
+  }
+}
