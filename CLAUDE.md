@@ -6,9 +6,8 @@ Minimal Discord bot for DeFi alerts (caps, rates, ICOs). See `README.md` for use
 
 ```
 bot.py               Discord entrypoint, commands, alert loop
-engine.py            Orchestrates fetchers, records samples, dispatches alerts
+engine.py            Adapter discovery, alert logic (caps/rates/ICOs), run_once orchestrator
 adapters/*.py        One module per data source
-alerts.py            Cap / rate / ICO alert logic and thresholds
 db.py                sqlite state (state.db); also exposes purge_keys()
 httputil.py          Shared HTTP helpers (get_json, post_json, to_float)
 scripts/*.py         Maintenance CLIs (purge_metrics.py removes keys from state.db)
@@ -42,8 +41,8 @@ Optional: an adapter can expose `PAIRED_CAPS = [...]` to declare paired supply/b
 
 Thresholds, intervals, and pairings change often. Read the source rather than assuming:
 
-- Rate thresholds (per-adapter and default): `RATE_MINOR`, `RATE_MINOR_DEFAULT`, `RATE_MAJOR` at the top of `alerts.py`.
-- Cap-full threshold and paired-cap logic: `CAP_FULL_THRESHOLD` and `handle_paired_caps` in `alerts.py`.
+- Rate thresholds (per-adapter and default): `RATE_MINOR`, `RATE_MINOR_DEFAULT`, `RATE_MAJOR` near the top of `engine.py`.
+- Cap-full threshold and paired-cap logic: `CAP_FULL_THRESHOLD` and `handle_paired_caps` in `engine.py`.
 - Polling interval: `ALERT_INTERVAL_SECONDS` in `bot.py`.
 - Paired-cap configs: `PAIRED_CAPS` inside the adapter that owns them (e.g. `adapters/euler.py`).
 - DB schema: `init_db` in `db.py`.

@@ -59,9 +59,8 @@ uv run python bot.py
 
 ```
 bot.py               Discord entrypoint, commands, alert dispatch loop
-engine.py            Polls adapters, records samples, evaluates alerts
+engine.py            Adapter discovery, cap/rate/ICO alert logic, run_once orchestrator
 adapters/*.py        One module per data source
-alerts.py            Cap / rate / ICO alert logic
 db.py                sqlite-backed state (state.db)
 httputil.py          Shared HTTP helpers (get_json, post_json, to_float)
 scripts/*.py         Maintenance CLIs (e.g. purge_metrics.py)
