@@ -27,6 +27,10 @@ RATE_MINOR = {
     "compound": 0.001,   # 0.1%
     "jupiter":  0.005,   # 0.5%
 }
+# Per-metric-key overrides take precedence over the per-adapter RATE_MINOR.
+RATE_MINOR_KEY = {
+    "dolomite:eth:borrow:rate": 0.001,   # 0.1%
+}
 
 
 # Adapter discovery
@@ -214,7 +218,7 @@ def handle_rate_metric(
     abs_delta = abs(delta)
     direction = "⬆️" if delta > 0 else "⬇️"
 
-    minor_threshold = RATE_MINOR.get(adapter, RATE_MINOR_DEFAULT)
+    minor_threshold = RATE_MINOR_KEY.get(key) or RATE_MINOR.get(adapter, RATE_MINOR_DEFAULT)
 
     if abs_delta >= RATE_MAJOR:
         level, threshold, icon = "major", RATE_MAJOR, ":scream_cat:"
