@@ -8,7 +8,7 @@ from db import purge_keys
 
 
 REQUIRED_METRIC_KEYS = {"key", "name", "value", "unit", "adapter"}
-ALLOWED_UNITS = {"rate", "ratio", "json"}
+ALLOWED_UNITS = {"rate", "ratio", "json", "available"}
 
 
 class TestAdapters(unittest.TestCase):

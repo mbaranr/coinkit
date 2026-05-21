@@ -8,6 +8,7 @@ CoinKit polls a handful of DeFi protocols every 5 minutes and posts alerts to pe
 
 - **Cap utilization**: alerts when supply or borrow caps are reached or freed.
 - **Rate moves**: alerts when interest rates drift past per-adapter thresholds.
+- **Borrowable liquidity**: tiered alerts when the amount available to borrow crosses 1k / 100k / 10M.
 - **ICO schedules**: alerts on newly scheduled launches and on launch day.
 
 Adapters cover Aave, Compound, Dolomite, Euler, Jupiter, MetaDAO, and Silo.
@@ -53,6 +54,7 @@ uv run python bot.py
 
 - **Caps**: state-based. Threshold is 99.995% utilization. Paired Sentora caps fire a major alert when both supply and borrow caps are freed at once.
 - **Rates**: delta-based against a sticky anchor. Major at 10%. Minor thresholds: 0.1% for Aave and Compound, 0.5% for Jupiter, 1% for the rest.
+- **Available**: tier-based. Fires on upward crossings at 1k / 100k / 10M of the borrow token. The 10M tier is major.
 - **ICOs**: alert on first sighting and on launch day (UTC).
 
 ## Layout

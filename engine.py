@@ -32,6 +32,10 @@ RATE_MINOR_KEY = {
     "dolomite:eth:borrow:rate": 0.001,   # 0.1%
 }
 
+# Tier thresholds for "available to borrow" amounts (denominated in the borrow token).
+# Crossing upward into a tier fires an alert; tier 3 is major, lower tiers are minor.
+AVAILABLE_TIERS = [1_000, 100_000, 10_000_000]
+
 
 # Adapter discovery
 
@@ -251,6 +255,57 @@ def handle_rate_metric(
     return alerts
 
 
+# Available
+
+def _available_tier(value: Optional[float]) -> int:
+    if value is None:
+        return 0
+    for i in range(len(AVAILABLE_TIERS) - 1, -1, -1):
+        if value > AVAILABLE_TIERS[i]:
+            return i + 1
+    return 0
+
+
+def handle_available_metric(
+    *,
+    key: str,
+    name: str,
+    value: float,
+    last_value: Optional[float],
+    adapter: Optional[str] = None,
+) -> List[Dict]:
+    """
+    Tier-based alerting for "available to borrow" amounts.
+    Fires when value crosses a tier threshold upward.
+    """
+    alerts: List[Dict] = []
+
+    last_tier = _available_tier(last_value)
+    curr_tier = _available_tier(value)
+
+    if curr_tier <= last_tier:
+        return alerts
+
+    crossed = AVAILABLE_TIERS[curr_tier - 1]
+    level = "major" if curr_tier == len(AVAILABLE_TIERS) else "minor"
+    icon = ":scream_cat:" if level == "major" else ":smirk_cat:"
+
+    alerts.append(
+        {
+            "category": "available",
+            "level": level,
+            "metric_key": key,
+            "adapter": adapter,
+            "message": (
+                f"{icon} {name} crossed {crossed:,}\n"
+                f"Current: {value:,.2f}"
+            ),
+        }
+    )
+
+    return alerts
+
+
 # ICOs
 
 def _utc_today() -> datetime.date:
@@ -419,6 +474,16 @@ def run_once() -> List[Dict]:
                         last_value=last_value,
                         adapter=adapter,
                         paired_keys=paired_keys,
+                    ),
+                )
+            elif unit == "available":
+                alerts.extend(
+                    handle_available_metric(
+                        key=key,
+                        name=name,
+                        value=value_f,
+                        last_value=last_value,
+                        adapter=adapter,
                     ),
                 )
             else:
