@@ -36,6 +36,9 @@ RATE_MINOR_KEY = {
 # Crossing upward into a tier fires an alert; tier 3 is major, lower tiers are minor.
 AVAILABLE_TIERS = [1_000, 100_000, 10_000_000]
 
+# Depletion threshold: crossing downward fires a major alert (liquidity nearly gone).
+AVAILABLE_DEPLETION_THRESHOLD = 100
+
 
 # Adapter discovery
 
@@ -276,32 +279,48 @@ def handle_available_metric(
 ) -> List[Dict]:
     """
     Tier-based alerting for "available to borrow" amounts.
-    Fires when value crosses a tier threshold upward.
+    Fires on upward tier crossings and on downward crossing of the
+    depletion threshold.
     """
     alerts: List[Dict] = []
 
     last_tier = _available_tier(last_value)
     curr_tier = _available_tier(value)
 
-    if curr_tier <= last_tier:
-        return alerts
+    if curr_tier > last_tier:
+        crossed = AVAILABLE_TIERS[curr_tier - 1]
+        level = "major" if curr_tier == len(AVAILABLE_TIERS) else "minor"
+        icon = ":scream_cat:" if level == "major" else ":smirk_cat:"
+        alerts.append(
+            {
+                "category": "available",
+                "level": level,
+                "metric_key": key,
+                "adapter": adapter,
+                "message": (
+                    f"{icon} {name} crossed {crossed:,}\n"
+                    f"Current: {value:,.2f}"
+                ),
+            }
+        )
 
-    crossed = AVAILABLE_TIERS[curr_tier - 1]
-    level = "major" if curr_tier == len(AVAILABLE_TIERS) else "minor"
-    icon = ":scream_cat:" if level == "major" else ":smirk_cat:"
-
-    alerts.append(
-        {
-            "category": "available",
-            "level": level,
-            "metric_key": key,
-            "adapter": adapter,
-            "message": (
-                f"{icon} {name} crossed {crossed:,}\n"
-                f"Current: {value:,.2f}"
-            ),
-        }
-    )
+    if (
+        last_value is not None
+        and last_value > AVAILABLE_DEPLETION_THRESHOLD
+        and value <= AVAILABLE_DEPLETION_THRESHOLD
+    ):
+        alerts.append(
+            {
+                "category": "available",
+                "level": "major",
+                "metric_key": key,
+                "adapter": adapter,
+                "message": (
+                    f":crying_cat_face: {name} dropped below {AVAILABLE_DEPLETION_THRESHOLD:,}\n"
+                    f"Current: {value:,.2f}"
+                ),
+            }
+        )
 
     return alerts
 
