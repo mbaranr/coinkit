@@ -11,7 +11,7 @@ CoinKit polls a handful of DeFi protocols every 5 minutes and posts alerts to pe
 - **Borrowable liquidity**: tiered alerts when the amount available to borrow crosses 1k / 100k / 10M.
 - **ICO schedules**: alerts on newly scheduled launches and on launch day.
 
-Adapters cover Aave, Compound, Dolomite, Euler, Jupiter, MetaDAO, and Silo.
+Adapters cover Aave, Compound, Dolomite, Euler, Jupiter, Kamino, MetaDAO, and Silo.
 
 ## Quick start
 
@@ -34,6 +34,7 @@ uv run python bot.py
 | `AAVE_CHANNEL_ID` | yes | Channel for Aave alerts |
 | `COMPOUND_CHANNEL_ID` | yes | Channel for Compound alerts |
 | `JUPITER_CHANNEL_ID` | yes | Channel for Jupiter alerts |
+| `KAMINO_CHANNEL_ID` | yes | Channel for Kamino alerts |
 | `GITHUB_TOKEN` | optional | Enables the `$issue` command |
 | `GITHUB_REPO` | optional | Target repo for `$issue`, e.g. `owner/name` |
 
