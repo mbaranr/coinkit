@@ -44,8 +44,7 @@ def _extract_borrowable(vault_payload: dict) -> float:
 def fetch() -> list[dict]:
     """
     Fetch Jupiter syrupUSD/* borrow APRs for the configured vault ids, and
-    USDG borrowable amounts from each USDG-borrow vault on the ethena endpoint
-    (USDe Loop and any other USDe/WSOL-collateral USDG vaults).
+    USDG borrowable amounts from the USDe Loop vault on the ethena endpoint.
 
     Returns a list of metric dicts.
     """
@@ -69,16 +68,14 @@ def fetch() -> list[dict]:
 
     for vault in _fetch_ethena_vaults():
         borrow_symbol = vault.get("borrowToken", {}).get("symbol")
-        if borrow_symbol != "USDG":
+        supply_symbol = vault.get("supplyToken", {}).get("symbol")
+        if borrow_symbol != "USDG" or supply_symbol != "USDe":
             continue
-
-        supply_symbol = vault.get("supplyToken", {}).get("symbol", "?")
-        supply_key = supply_symbol.lower()
 
         metrics.append(
             {
-                "key": f"jupiter:ethena:{supply_key}:usdg:borrow:available",
-                "name": f"Jupiter Ethena {supply_symbol}/USDG Borrowable",
+                "key": "jupiter:ethena:usde:usdg:borrow:available",
+                "name": "Jupiter Ethena USDe/USDG Borrowable",
                 "value": _extract_borrowable(vault),
                 "unit": "available",
                 "adapter": "jupiter",
