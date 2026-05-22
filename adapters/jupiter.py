@@ -1,8 +1,8 @@
 from httputil import get_json
 
 
-BASE_URL = "https://api.solana.fluid.io/v1/borrowing/vaults"
-ETHENA_URL = "https://api.solana.fluid.io/v1/ethena/borrowing/vaults"
+BASE_URL = "https://lite-api.jup.ag/lend/v1/borrow/vaults"
+ETHENA_URL = "https://lite-api.jup.ag/lend/v1/borrow/vaults?market=ethena"
 
 VAULTS: dict[int, str] = {
     7: "USDC",
@@ -15,8 +15,12 @@ VAULTS: dict[int, str] = {
 RATE_SCALE = 10_000
 
 
-def _fetch_vault(vault_id: int) -> dict:
-    return get_json(f"{BASE_URL}/{vault_id}", timeout=15)
+def _fetch_vaults() -> list[dict]:
+    return get_json(BASE_URL, timeout=15)
+
+
+def _fetch_vault(vault_id: int) -> dict | None:
+    return next((v for v in _fetch_vaults() if v.get("id") == vault_id), None)
 
 
 def _fetch_ethena_vaults() -> list[dict]:
@@ -50,8 +54,13 @@ def fetch() -> list[dict]:
     """
     metrics: list[dict] = []
 
+    vaults_by_id = {v.get("id"): v for v in _fetch_vaults()}
+
     for vault_id, token_symbol in VAULTS.items():
-        payload = _fetch_vault(vault_id)
+        payload = vaults_by_id.get(vault_id)
+        if payload is None:
+            raise KeyError(f"Jupiter vault id {vault_id} not found in vault list")
+
         rate = _extract_borrow_rate_decimal(payload)
 
         token_key = token_symbol.lower()
