@@ -7,7 +7,15 @@ import discord
 from discord.ext import commands, tasks
 from github import Github, Auth, GithubException
 
-from engine import ADAPTERS, MIN_INTERVAL_SECONDS, run_once
+from engine import (
+    ADAPTERS,
+    AVAILABLE_DEPLETION_THRESHOLD,
+    AVAILABLE_TIERS,
+    DEFAULT_INTERVAL_SECONDS,
+    MIN_INTERVAL_SECONDS,
+    adapter_intervals,
+    run_once,
+)
 from db import (
     list_metrics,
     add_subscription,
@@ -203,16 +211,54 @@ async def help(ctx):
     )
 
 
+def _format_interval(seconds: int) -> str:
+    if seconds % 60 == 0:
+        minutes = seconds // 60
+        unit = "minute" if minutes == 1 else "minutes"
+        return f"{minutes} {unit}"
+    unit = "second" if seconds == 1 else "seconds"
+    return f"{seconds} {unit}"
+
+
+def _cadence_text() -> str:
+    intervals = adapter_intervals()
+    overrides = sorted(
+        (name, secs) for name, secs in intervals.items()
+        if secs != DEFAULT_INTERVAL_SECONDS
+    )
+    lines = [f"Default polling cadence: every {_format_interval(DEFAULT_INTERVAL_SECONDS)}."]
+    if overrides:
+        lines.append("Custom cadence:")
+        lines.extend(f"- {name}: every {_format_interval(secs)}" for name, secs in overrides)
+    return "\n".join(lines)
+
+
+def _available_text() -> str:
+    minor_tiers = AVAILABLE_TIERS[:-1]
+    major_tier = AVAILABLE_TIERS[-1]
+    lines = [
+        "Available-to-borrow alerts (tier crossings, denominated in the borrow token):"
+    ]
+    if minor_tiers:
+        joined = " / ".join(f"{n:,}" for n in minor_tiers)
+        lines.append(f"Crossing up through {joined}: minor")
+    lines.append(f"Crossing up through {major_tier:,}: major")
+    lines.append(f"Dropping below {AVAILABLE_DEPLETION_THRESHOLD:,}: major")
+    return "\n".join(lines)
+
+
 @bot.command()
 async def info(ctx):
     await ctx.send(
-        "I sniff metrics and discrete events on a per-source cadence (most every 5 minutes, some faster).\n"
+        f"I sniff metrics and discrete events on a per-source cadence.\n"
+        f"{_cadence_text()}\n\n"
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
         "Rate alert thresholds:\n"
         "Aave / Compound: ≥ 0.1%\n"
         "Jupiter: ≥ 0.5%\n"
         "All others: ≥ 1% (minor), ≥ 10% (major)\n\n"
+        f"{_available_text()}\n\n"
         "GitHub: https://github.com/mbaranr/coinkit"
     )
 

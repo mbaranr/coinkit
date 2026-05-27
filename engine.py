@@ -81,16 +81,21 @@ PAIRED_CAPS: List[Dict] = [
 
 DEFAULT_INTERVAL_SECONDS = 300
 
-def _adapter_interval(name: str) -> int:
+def adapter_interval(name: str) -> int:
     mod = ADAPTERS.get(name)
     if mod is None:
         return DEFAULT_INTERVAL_SECONDS
     return int(getattr(mod, "INTERVAL_SECONDS", DEFAULT_INTERVAL_SECONDS))
 
+
+def adapter_intervals() -> Dict[str, int]:
+    return {name: adapter_interval(name) for name in ADAPTERS}
+
+
 # Drives the bot's tick rate so run_once is called often enough for the
 # fastest adapter to hit its cadence.
 MIN_INTERVAL_SECONDS = min(
-    (_adapter_interval(n) for n in ADAPTERS),
+    (adapter_interval(n) for n in ADAPTERS),
     default=DEFAULT_INTERVAL_SECONDS,
 )
 
@@ -461,7 +466,7 @@ def run_once() -> List[Dict]:
     now = time.monotonic()
 
     for adapter_name, mod in ADAPTERS.items():
-        interval = _adapter_interval(adapter_name)
+        interval = adapter_interval(adapter_name)
         last = _last_fetch_at.get(adapter_name)
         if last is not None and (now - last) < interval:
             continue
