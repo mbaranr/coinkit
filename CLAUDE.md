@@ -32,6 +32,8 @@ Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have
 
 Optional: an adapter can expose `PAIRED_CAPS = [...]` to declare paired supply/borrow caps that should fire a major alert when freed simultaneously. The engine aggregates `PAIRED_CAPS` across all adapters.
 
+Optional: an adapter can expose `INTERVAL_SECONDS = <int>` to opt into a custom polling cadence. Default is `engine.DEFAULT_INTERVAL_SECONDS` (300s). The bot loop ticks at the minimum across all adapters; the engine tracks per-adapter last-fetch timestamps and skips non-due adapters each tick.
+
 `engine.run_once` routes by `unit`:
 - `"ratio"` to cap alerts
 - `"json"` to ICO alerts
@@ -43,7 +45,7 @@ Thresholds, intervals, and pairings change often. Read the source rather than as
 
 - Rate thresholds (per-adapter and default): `RATE_MINOR`, `RATE_MINOR_DEFAULT`, `RATE_MAJOR` near the top of `engine.py`.
 - Cap-full threshold and paired-cap logic: `CAP_FULL_THRESHOLD` and `handle_paired_caps` in `engine.py`.
-- Polling interval: `ALERT_INTERVAL_SECONDS` in `bot.py`.
+- Polling interval: `DEFAULT_INTERVAL_SECONDS` in `engine.py` (per-adapter override via `INTERVAL_SECONDS` constant in the adapter module). `ALERT_INTERVAL_SECONDS` in `bot.py` is derived from these and drives the loop tick rate.
 - Paired-cap configs: `PAIRED_CAPS` inside the adapter that owns them (e.g. `adapters/euler.py`).
 - DB schema: `init_db` in `db.py`.
 

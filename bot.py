@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands, tasks
 from github import Github, Auth, GithubException
 
-from engine import ADAPTERS, run_once
+from engine import ADAPTERS, MIN_INTERVAL_SECONDS, run_once
 from db import (
     list_metrics,
     add_subscription,
@@ -26,7 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger("stonks")
 
 
-ALERT_INTERVAL_SECONDS = 5 * 60
+# Loop ticks at the fastest adapter's cadence; the engine itself decides which
+# adapters are actually due on each tick (see engine._adapter_interval).
+ALERT_INTERVAL_SECONDS = MIN_INTERVAL_SECONDS
 
 load_dotenv()
 
@@ -136,7 +138,7 @@ async def dm_engine_error(message: str = None) -> None:
             user = await bot.fetch_user(ENGINE_ERROR_DM_USER_ID)
 
         if message:
-            text = f"{message}\n\nThe toy broke, but I'm still a good kitty! I'll keep trying to fetch the data every 5 minutes."
+            text = f"{message}\n\nThe toy broke, but I'm still a good kitty! I'll keep trying on the next prowl."
         else:
             text = "CoinKit tripped over its own tail and hit an engine error. Check the logs before it knocks something else off the table."
         await user.send(text)
@@ -204,7 +206,7 @@ async def help(ctx):
 @bot.command()
 async def info(ctx):
     await ctx.send(
-        "I sniff metrics and discrete events every 5 minutes.\n"
+        "I sniff metrics and discrete events on a per-source cadence (most every 5 minutes, some faster).\n"
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
         "Rate alert thresholds:\n"

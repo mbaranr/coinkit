@@ -1,6 +1,7 @@
 import importlib
 import os
 import pkgutil
+import time
 from datetime import datetime, timezone
 from types import ModuleType
 from typing import Dict, List, Optional
@@ -74,6 +75,28 @@ PAIRED_CAPS: List[Dict] = [
     for mod in ADAPTERS.values()
     for pair in getattr(mod, "PAIRED_CAPS", [])
 ]
+
+
+# Per-adapter polling cadence
+
+DEFAULT_INTERVAL_SECONDS = 300
+
+def _adapter_interval(name: str) -> int:
+    mod = ADAPTERS.get(name)
+    if mod is None:
+        return DEFAULT_INTERVAL_SECONDS
+    return int(getattr(mod, "INTERVAL_SECONDS", DEFAULT_INTERVAL_SECONDS))
+
+# Drives the bot's tick rate so run_once is called often enough for the
+# fastest adapter to hit its cadence.
+MIN_INTERVAL_SECONDS = min(
+    (_adapter_interval(n) for n in ADAPTERS),
+    default=DEFAULT_INTERVAL_SECONDS,
+)
+
+# Tracks the monotonic timestamp of each adapter's last fetch attempt.
+# Updated before the fetch runs so a failing adapter does not retry every tick.
+_last_fetch_at: Dict[str, float] = {}
 
 
 # Caps
@@ -435,7 +458,15 @@ def run_once() -> List[Dict]:
         for key in (pair["supply_key"], pair["borrow_key"])
     }
 
+    now = time.monotonic()
+
     for adapter_name, mod in ADAPTERS.items():
+        interval = _adapter_interval(adapter_name)
+        last = _last_fetch_at.get(adapter_name)
+        if last is not None and (now - last) < interval:
+            continue
+        _last_fetch_at[adapter_name] = now
+
         try:
             metrics = mod.fetch()
         except Exception as e:

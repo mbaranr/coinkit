@@ -1,6 +1,8 @@
 from httputil import get_json
 
 
+INTERVAL_SECONDS = 60
+
 BASE_URL = "https://lite-api.jup.ag/lend/v1/borrow/vaults"
 ETHENA_URL = "https://lite-api.jup.ag/lend/v1/borrow/vaults?market=ethena"
 
