@@ -1,6 +1,8 @@
+import base64
+import os
 from datetime import datetime, timedelta, timezone
 
-from httputil import get_json
+from httputil import get_json, post_json
 
 
 # Kamino Ethena Market and its reserves.
@@ -15,6 +17,18 @@ RESERVES = {
 }
 
 LIVE_URL = f"https://api.kamino.finance/kamino-market/{MARKET}/reserves/metrics"
+
+SOLANA_RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
+
+# Byte offset of ReserveConfig.utilizationLimitBlockBorrowingAbovePct (u8, a
+# percent; 0 means no limit) into the klend Reserve account data, including the
+# 8-byte Anchor discriminator. Derived from the klend IDL
+# (Kamino-Finance/klend-sdk src/idl/klend.json: ReserveConfig sits at +4848,
+# the field at +645 within it) and validated on-chain on 2026-06-03: the
+# borrowLimit at the adjacent computed offset read back the governance cap
+# exactly. The field is followed by large reserved padding, so existing offsets
+# hold across program upgrades (new fields land in padding).
+_UTIL_LIMIT_OFFSET = 5501
 
 
 def _history_url(reserve: str) -> str:
@@ -51,6 +65,28 @@ def _fetch_live_reserves() -> dict:
     return {r.get("reserve"): r for r in reserves}
 
 
+def _fetch_util_limit_pct(reserve: str, symbol: str) -> int:
+    """
+    Read utilizationLimitBlockBorrowingAbovePct from the on-chain reserve.
+    The UI's "Liq. Available" caps borrows at this percent of deposits, and the
+    metrics API does not expose it. 0 means no limit.
+    """
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getAccountInfo",
+        "params": [
+            reserve,
+            {"encoding": "base64", "dataSlice": {"offset": _UTIL_LIMIT_OFFSET, "length": 1}},
+        ],
+    }
+    resp = post_json(SOLANA_RPC_URL, json=payload, timeout=15)
+    value = (resp.get("result") or {}).get("value")
+    if not value:
+        raise RuntimeError(f"Kamino {symbol} reserve account not found on-chain")
+    return base64.b64decode(value["data"][0])[0]
+
+
 def _borrowable(reserve: str, symbol: str, live_by_reserve: dict) -> float:
     hist = _fetch_history_metrics(reserve, symbol)
     decimals = int(hist["decimals"])
@@ -59,13 +95,21 @@ def _borrowable(reserve: str, symbol: str, live_by_reserve: dict) -> float:
     live = live_by_reserve.get(reserve)
     if live is None:
         raise RuntimeError(f"Kamino {symbol} reserve not found in live metrics")
+    total_supply = float(live["totalSupply"])
     total_borrows = float(live["totalBorrow"])
     # totalSupply - totalBorrow underestimates on-chain liquidity by
     # accumulatedProtocolFees (~5 figures on a ~$250M reserve), which
     # is immaterial: the cap is the binding constraint in normal state.
-    on_chain = max(0.0, float(live["totalSupply"]) - total_borrows)
+    on_chain = max(0.0, total_supply - total_borrows)
 
-    return max(0.0, min(on_chain, cap - total_borrows))
+    constraints = [on_chain, cap - total_borrows]
+    # Borrowing is blocked above util_pct% of deposits, so the headroom this
+    # leaves is its own constraint (binds before the cap on PYUSD).
+    util_pct = _fetch_util_limit_pct(reserve, symbol)
+    if util_pct:
+        constraints.append(util_pct / 100.0 * total_supply - total_borrows)
+
+    return max(0.0, min(constraints))
 
 
 def fetch() -> list[dict]:

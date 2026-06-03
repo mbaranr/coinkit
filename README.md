@@ -37,6 +37,7 @@ uv run python bot.py
 | `KAMINO_CHANNEL_ID` | yes | Channel for Kamino alerts |
 | `GITHUB_TOKEN` | optional | Enables the `$issue` command |
 | `GITHUB_REPO` | optional | Target repo for `$issue`, e.g. `owner/name` |
+| `SOLANA_RPC_URL` | optional | Solana RPC for Kamino on-chain reads (default: public mainnet) |
 
 ## Discord commands
 
