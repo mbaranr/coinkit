@@ -6,10 +6,25 @@ from httputil import post_json
 
 
 # ── RPC + VaultLens ──────────────────────────────────────────────────────────
-# Euler's REST API is behind Cloudflare. All data is now fetched on-chain via
-# their RPC proxy and the VaultLens contract (getVaultInfoFull).
+# Euler's REST API is behind Cloudflare. All data is fetched on-chain via the
+# VaultLens contract (getVaultInfoFull).
+#
+# Euler's own RPC proxy (app.euler.finance/api/rpc/<chain>) was retired: it now
+# serves the SPA HTML and 403s to non-browser clients. These are plain read-only
+# eth_calls against a public contract, so we hit public RPC nodes directly.
+# Multiple endpoints per chain give resilience against a single flaky node.
 
-EULER_RPC_URL = "https://app.euler.finance/api/rpc/{chain_id}"
+EULER_RPC_URLS = {
+    1: [
+        "https://ethereum-rpc.publicnode.com",
+        "https://eth.llamarpc.com",
+        "https://cloudflare-eth.com",
+    ],
+    43114: [
+        "https://avalanche-c-chain-rpc.publicnode.com",
+        "https://api.avax.network/ext/bc/C/rpc",
+    ],
+}
 EULER_APY_SCALE = 1e27  # ray
 
 # VaultLens addresses per chain (from euler-xyz/euler-interfaces)
@@ -177,8 +192,22 @@ def _rpc_batch(chain_id: int, vault_addresses: List[str]) -> Dict[str, List[int]
             "id": i + 1,
         })
 
-    url = EULER_RPC_URL.format(chain_id=chain_id)
-    responses = post_json(url, json=batch, timeout=30)
+    urls = EULER_RPC_URLS.get(chain_id)
+    if not urls:
+        raise RuntimeError(f"No RPC endpoint for chain {chain_id}")
+
+    responses = None
+    last_err: Exception | None = None
+    for url in urls:
+        try:
+            responses = post_json(url, json=batch, timeout=30)
+            break
+        except Exception as exc:  # try the next endpoint on any transport error
+            last_err = exc
+    if responses is None:
+        raise RuntimeError(
+            f"All RPC endpoints failed for chain {chain_id}: {last_err}"
+        )
 
     results: Dict[str, List[int]] = {}
     for resp in responses:
