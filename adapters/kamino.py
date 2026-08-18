@@ -17,7 +17,18 @@ RESERVES = {
 
 LIVE_URL = f"https://api.kamino.finance/kamino-market/{MARKET}/reserves/metrics"
 
-SOLANA_RPC_URL = os.getenv("SOLANA_RPC_URL", "https://api.mainnet-beta.solana.com")
+# api.mainnet-beta.solana.com is aggressively throttled and read-times-out under
+# load, so it is a fallback rather than the primary. SOLANA_RPC_URL (a private
+# node) takes precedence when set; the publics stay on as backup behind it.
+_PUBLIC_RPC_URLS = [
+    "https://solana-rpc.publicnode.com",
+    "https://api.mainnet-beta.solana.com",
+]
+_RPC_URL_OVERRIDE = os.getenv("SOLANA_RPC_URL")
+SOLANA_RPC_URLS = (
+    [_RPC_URL_OVERRIDE, *_PUBLIC_RPC_URLS] if _RPC_URL_OVERRIDE else _PUBLIC_RPC_URLS
+)
+_RPC_TIMEOUT = 10
 
 # Byte offsets into the klend Reserve account data, including the 8-byte Anchor
 # discriminator. Derived from the klend IDL (Kamino-Finance/klend-sdk
@@ -39,19 +50,16 @@ def _fetch_live_reserves() -> dict:
     return {r.get("reserve"): r for r in reserves}
 
 
-def _fetch_reserve_accounts() -> dict:
-    """
-    Reserve config (borrow cap, utilization block, decimals) straight from
-    chain. The metrics history endpoint also carries the cap, but it lags
-    several hours behind and serves an empty window while it catches up.
-    """
+def _fetch_reserve_accounts_from(url: str) -> dict:
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getMultipleAccounts",
         "params": [list(RESERVES), {"encoding": "base64"}],
     }
-    resp = post_json(SOLANA_RPC_URL, json=payload, timeout=15)
+    resp = post_json(url, json=payload, timeout=_RPC_TIMEOUT)
+    if resp.get("error"):
+        raise RuntimeError(f"Kamino RPC error: {resp['error']}")
     values = (resp.get("result") or {}).get("value") or []
     if len(values) != len(RESERVES):
         raise RuntimeError(
@@ -72,6 +80,24 @@ def _fetch_reserve_accounts() -> dict:
             )
         accounts[reserve] = data
     return accounts
+
+
+def _fetch_reserve_accounts() -> dict:
+    """
+    Reserve config (borrow cap, utilization block, decimals) straight from
+    chain. The metrics history endpoint also carries the cap, but it lags
+    several hours behind and serves an empty window while it catches up.
+
+    Any endpoint failure (timeout, throttling, stale or partial response)
+    falls through to the next one; only an all-endpoints failure raises.
+    """
+    last_err: Exception | None = None
+    for url in SOLANA_RPC_URLS:
+        try:
+            return _fetch_reserve_accounts_from(url)
+        except Exception as exc:
+            last_err = exc
+    raise RuntimeError(f"All Solana RPC endpoints failed: {last_err}")
 
 
 def _u64(data: bytes, offset: int) -> int:
