@@ -43,9 +43,15 @@ AVAILABLE_DEPLETION_THRESHOLD = 100
 
 # Adapter discovery
 
+# Paused in code (survives redeploys, unlike DISABLED_ADAPTERS in .env).
+# metadao: www.idontbelieve.link stopped serving a usable TLS handshake, so the
+# Notion-backed ICO source is unreachable. Drop from this set once it is back.
+PAUSED_ADAPTERS = {"metadao"}
+
+
 def _disabled_set() -> set:
     raw = os.getenv("DISABLED_ADAPTERS", "")
-    return {n.strip() for n in raw.split(",") if n.strip()}
+    return PAUSED_ADAPTERS | {n.strip() for n in raw.split(",") if n.strip()}
 
 
 def _discover_adapters() -> Dict[str, ModuleType]:
@@ -53,13 +59,15 @@ def _discover_adapters() -> Dict[str, ModuleType]:
     Auto-discover every module under adapters/. Each MUST expose
     `fetch() -> list[dict]`. Optional: a `PAIRED_CAPS` list of pair configs.
 
-    Adapters listed in the DISABLED_ADAPTERS env (comma-separated) are skipped.
+    Adapters in PAUSED_ADAPTERS, or listed in the DISABLED_ADAPTERS env
+    (comma-separated), are skipped.
     """
     disabled = _disabled_set()
     out: Dict[str, ModuleType] = {}
     for info in pkgutil.iter_modules(_adapters_pkg.__path__):
         if info.name in disabled:
-            print(f"[engine] adapter {info.name!r} disabled via DISABLED_ADAPTERS")
+            why = "PAUSED_ADAPTERS" if info.name in PAUSED_ADAPTERS else "DISABLED_ADAPTERS"
+            print(f"[engine] adapter {info.name!r} disabled via {why}")
             continue
         mod = importlib.import_module(f"adapters.{info.name}")
         if not callable(getattr(mod, "fetch", None)):

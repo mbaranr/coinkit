@@ -26,7 +26,7 @@ tests.py             Unit tests + live-network adapter tests
 
 Adapters are auto-discovered: every module under `adapters/` is loaded by `engine._discover_adapters` at import time. Adding a new adapter means dropping `adapters/<name>.py` and setting `<NAME>_CHANNEL_ID` in `.env`. No engine, bot, or test edits required.
 
-To temporarily mute a misbehaving adapter without touching code, set `DISABLED_ADAPTERS=foo,bar` in `.env`.
+To temporarily mute a misbehaving adapter without touching code, set `DISABLED_ADAPTERS=foo,bar` in `.env`. For a longer pause that should survive redeploys (dead upstream, retired endpoint), add the adapter name to `engine.PAUSED_ADAPTERS` instead.
 
 Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter` (where `adapter` matches the module filename). Use `httputil.get_json` / `httputil.post_json` / `httputil.to_float` instead of rolling raw `requests` calls.
 
