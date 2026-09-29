@@ -3,8 +3,8 @@ from typing import Dict, List
 from httputil import get_json, to_float
 
 
-SUMMARY_URL = "https://v3-api.compound.finance/market/{network}/{comet}/summary"
-REWARDS_URL = "https://v3-api.compound.finance/market/all-networks/all-contracts/rewards/dapp-data"
+SUMMARY_URL = "https://v3-api.compound.xyz/market/{network}/{comet}/summary"
+REWARDS_URL = "https://v3-api.compound.xyz/market/all-networks/all-contracts/rewards/dapp-data"
 
 MARKETS = [
     {
