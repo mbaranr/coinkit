@@ -11,7 +11,7 @@ CoinKit polls a handful of DeFi protocols every 5 minutes and posts alerts to pe
 - **Borrowable liquidity**: tiered alerts when the amount available to borrow crosses 1k / 100k / 10M.
 - **ICO schedules**: alerts on newly scheduled launches and on launch day.
 
-Adapters cover Aave, Compound, Dolomite, Euler, Jupiter, Kamino, MetaDAO (paused: upstream unreachable), and Silo.
+Active adapters: Aave (V3 Ethereum and Monad WETH), Dolomite (ETH), Jupiter (Ethena USDG borrowable), and Kamino. Paused but kept in code: Compound, Euler, Silo, and MetaDAO (upstream unreachable). Paused adapters don't need a channel id and their keys are hidden from `$toys`.
 
 ## Quick start
 
@@ -27,12 +27,9 @@ uv run python bot.py
 | --- | --- | --- |
 | `DISCORD_TOKEN` | yes | Discord bot token |
 | `ENGINE_ERROR_DM_USER_ID` | yes | User id to DM on engine errors |
-| `EULER_CHANNEL_ID` | yes | Channel for Euler alerts |
-| `SILO_CHANNEL_ID` | yes | Channel for Silo alerts |
 | `METADAO_CHANNEL_ID` | yes | Channel for MetaDAO alerts |
 | `DOLOMITE_CHANNEL_ID` | yes | Channel for Dolomite alerts |
 | `AAVE_CHANNEL_ID` | yes | Channel for Aave alerts |
-| `COMPOUND_CHANNEL_ID` | yes | Channel for Compound alerts |
 | `JUPITER_CHANNEL_ID` | yes | Channel for Jupiter alerts |
 | `KAMINO_CHANNEL_ID` | yes | Channel for Kamino alerts |
 | `GITHUB_TOKEN` | optional | Enables the `$issue` command |
@@ -54,8 +51,8 @@ uv run python bot.py
 
 ## Alert thresholds
 
-- **Caps**: state-based. Threshold is 99.995% utilization. Paired Sentora caps fire a major alert when both supply and borrow caps are freed at once.
-- **Rates**: delta-based against a sticky anchor. Major at 10%. Minor thresholds: 0.1% for Aave and Compound, 0.5% for Jupiter, 1% for the rest.
+- **Caps**: state-based. Threshold is 99.995% utilization. Adapters can declare paired supply/borrow caps (`PAIRED_CAPS`) that fire a major alert when both are freed at once.
+- **Rates**: delta-based against a sticky anchor. Major at 10%. Minor thresholds: 0.1% for Aave and Dolomite ETH, 1% for the rest.
 - **Available**: tier-based. Fires on upward crossings at 1k / 100k / 10M of the borrow token. The 10M tier is major.
 - **ICOs**: alert on first sighting and on launch day (UTC).
 

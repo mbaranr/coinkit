@@ -14,6 +14,8 @@ TARGETS: List[Dict] = [
     {"chain_id": 1,     "symbol": "WETH", "key": "dolomite:eth:borrow:rate",  "name": "Dolomite ETH Borrow APR"},
 ]
 
+PAUSED_KEYS = {"dolomite:usdc:borrow:rate", "dolomite:usdt:borrow:rate"}
+
 
 def _fetch_chain_rates(chain_id: int) -> Dict[str, float]:
     """Return {symbol: borrow_rate} for the given chain."""
@@ -35,12 +37,14 @@ def _fetch_chain_rates(chain_id: int) -> Dict[str, float]:
 
 def fetch() -> List[Dict]:
     """
-    Fetch Dolomite borrow APRs across configured chains:
+    Fetch Dolomite borrow APRs for every target not in PAUSED_KEYS:
     - Berachain (80094): USDC, USDT
     - Ethereum  (1):     ETH (WETH)
     """
     by_chain: Dict[int, List[Dict]] = defaultdict(list)
     for t in TARGETS:
+        if t["key"] in PAUSED_KEYS:
+            continue
         by_chain[t["chain_id"]].append(t)
 
     metrics: List[Dict] = []

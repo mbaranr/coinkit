@@ -14,6 +14,7 @@ from engine import (
     DEFAULT_INTERVAL_SECONDS,
     MIN_INTERVAL_SECONDS,
     adapter_intervals,
+    is_active_key,
     run_once,
 )
 from db import (
@@ -255,8 +256,7 @@ async def info(ctx):
         "Cap utilization threshold: 99.995%.\n"
         "Rate anchors are sticky from first observation.\n\n"
         "Rate alert thresholds:\n"
-        "Aave / Compound: ≥ 0.1%\n"
-        "Jupiter: ≥ 0.5%\n"
+        "Aave / Dolomite ETH: ≥ 0.1%\n"
         "All others: ≥ 1% (minor), ≥ 10% (major)\n\n"
         f"{_available_text()}\n\n"
         "GitHub: https://github.com/mbaranr/coinkit"
@@ -265,10 +265,7 @@ async def info(ctx):
 
 @bot.command(name="toys")
 async def toys(ctx):
-    metrics = [
-        m for m in list_metrics()
-        if not m["key"].endswith(":anchor")
-    ]
+    metrics = [m for m in list_metrics() if is_active_key(m["key"])]
 
     if not metrics:
         await ctx.send(
@@ -295,11 +292,7 @@ async def toys(ctx):
 
 @bot.command(name="sub")
 async def subscribe(ctx, metric_key: str):
-    metrics = {
-        m["key"]
-        for m in list_metrics()
-        if not m["key"].endswith(":anchor")
-    }
+    metrics = {m["key"] for m in list_metrics() if is_active_key(m["key"])}
 
     if metric_key not in metrics:
         await ctx.send(
@@ -343,7 +336,7 @@ async def unsubscribe(ctx, metric_key: str):
 async def mytoys(ctx):
     subs = [
         m for m in list_metrics()
-        if not m["key"].endswith(":anchor")
+        if is_active_key(m["key"])
         and m["key"] in set(list_subscriptions(ctx.author.id))
     ]
     if not subs:

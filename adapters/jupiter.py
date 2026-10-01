@@ -15,6 +15,13 @@ VAULTS: dict[int, str] = {
 RATE_SCALE = 10_000
 
 
+def _rate_key(token_symbol: str) -> str:
+    return f"jupiter:syrupusdc:{token_symbol.lower()}:borrow:rate"
+
+
+PAUSED_KEYS = {_rate_key(symbol) for symbol in VAULTS.values()}
+
+
 def _fetch_vaults() -> list[dict]:
     return get_json(BASE_URL, timeout=15)
 
@@ -47,27 +54,31 @@ def _extract_borrowable(vault_payload: dict) -> float:
 
 def fetch() -> list[dict]:
     """
-    Fetch Jupiter syrupUSD/* borrow APRs for the configured vault ids, and
-    USDG borrowable amounts from the USDe Loop vault on the ethena endpoint.
+    Fetch Jupiter syrupUSD/* borrow APRs for the configured vault ids not in
+    PAUSED_KEYS, and USDG borrowable amounts from the USDe Loop vault on the
+    ethena endpoint.
 
     Returns a list of metric dicts.
     """
     metrics: list[dict] = []
 
-    vaults_by_id = {v.get("id"): v for v in _fetch_vaults()}
+    active = {
+        vault_id: symbol
+        for vault_id, symbol in VAULTS.items()
+        if _rate_key(symbol) not in PAUSED_KEYS
+    }
+    vaults_by_id = {v.get("id"): v for v in _fetch_vaults()} if active else {}
 
-    for vault_id, token_symbol in VAULTS.items():
+    for vault_id, token_symbol in active.items():
         payload = vaults_by_id.get(vault_id)
         if payload is None:
             raise KeyError(f"Jupiter vault id {vault_id} not found in vault list")
 
         rate = _extract_borrow_rate_decimal(payload)
 
-        token_key = token_symbol.lower()
-
         metrics.append(
             {
-                "key": f"jupiter:syrupusdc:{token_key}:borrow:rate",
+                "key": _rate_key(token_symbol),
                 "name": f"Jupiter syrupUSDC/{token_symbol} Borrow APR",
                 "value": rate,
                 "unit": "rate",

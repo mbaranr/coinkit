@@ -46,7 +46,8 @@ AVAILABLE_DEPLETION_THRESHOLD = 100
 # Paused in code (survives redeploys, unlike DISABLED_ADAPTERS in .env).
 # metadao: www.idontbelieve.link stopped serving a usable TLS handshake, so the
 # Notion-backed ICO source is unreachable. Drop from this set once it is back.
-PAUSED_ADAPTERS = {"metadao"}
+# compound, euler, silo: unsubscribed by the trader; code kept for later reuse.
+PAUSED_ADAPTERS = {"metadao", "compound", "euler", "silo"}
 
 
 def _disabled_set() -> set:
@@ -57,7 +58,8 @@ def _disabled_set() -> set:
 def _discover_adapters() -> Dict[str, ModuleType]:
     """
     Auto-discover every module under adapters/. Each MUST expose
-    `fetch() -> list[dict]`. Optional: a `PAIRED_CAPS` list of pair configs.
+    `fetch() -> list[dict]`. Optional: a `PAIRED_CAPS` list of pair configs,
+    and a `PAUSED_KEYS` set of metric keys the adapter skips when fetching.
 
     Adapters in PAUSED_ADAPTERS, or listed in the DISABLED_ADAPTERS env
     (comma-separated), are skipped.
@@ -83,6 +85,22 @@ PAIRED_CAPS: List[Dict] = [
     for mod in ADAPTERS.values()
     for pair in getattr(mod, "PAIRED_CAPS", [])
 ]
+
+PAUSED_KEYS: set = {
+    key
+    for mod in ADAPTERS.values()
+    for key in getattr(mod, "PAUSED_KEYS", set())
+}
+
+
+def is_active_key(metric_key: str) -> bool:
+    """
+    False for keys left in state.db by a paused/disabled adapter or a paused
+    metric, so they stay out of $toys without purging their history.
+    """
+    if metric_key.endswith(":anchor"):
+        return False
+    return metric_key.split(":", 1)[0] in ADAPTERS and metric_key not in PAUSED_KEYS
 
 
 # Per-adapter polling cadence

@@ -28,6 +28,8 @@ Adapters are auto-discovered: every module under `adapters/` is loaded by `engin
 
 To temporarily mute a misbehaving adapter without touching code, set `DISABLED_ADAPTERS=foo,bar` in `.env`. For a longer pause that should survive redeploys (dead upstream, retired endpoint), add the adapter name to `engine.PAUSED_ADAPTERS` instead.
 
+When the trader unsubscribes from something, pause it rather than deleting code (it may come back). Whole adapter: add it to `engine.PAUSED_ADAPTERS`. Individual metrics: add their keys to the adapter's `PAUSED_KEYS` set and have `fetch()` skip them, so paused sources cost no network calls. `engine.is_active_key` hides both kinds from `$toys`, `$sub` and `$mytoys`; their rows stay in `state.db`.
+
 Each `adapters/<name>.py` MUST expose `fetch() -> list[dict]`. Metric dicts have `key`, `name`, `value`, `unit`, `adapter` (where `adapter` matches the module filename). Use `httputil.get_json` / `httputil.post_json` / `httputil.to_float` instead of rolling raw `requests` calls.
 
 Optional: an adapter can expose `PAIRED_CAPS = [...]` to declare paired supply/borrow caps that should fire a major alert when freed simultaneously. The engine aggregates `PAIRED_CAPS` across all adapters.
