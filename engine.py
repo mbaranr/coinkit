@@ -36,6 +36,10 @@ RATE_MINOR_KEY = {
 # Tier thresholds for "available to borrow" amounts (denominated in the borrow token).
 # Crossing upward into a tier fires an alert; tier 3 is major, lower tiers are minor.
 AVAILABLE_TIERS = [1_000, 100_000, 10_000_000]
+# Per-metric-key tier overrides take precedence over AVAILABLE_TIERS.
+AVAILABLE_TIERS_KEY = {
+    "jupiter:sentora:usde:pyusd:borrow:available": [100_000],
+}
 
 # Depletion threshold: crossing downward fires a major alert (liquidity nearly gone).
 AVAILABLE_DEPLETION_THRESHOLD = 100
@@ -314,11 +318,11 @@ def handle_rate_metric(
 
 # Available
 
-def _available_tier(value: Optional[float]) -> int:
+def _available_tier(value: Optional[float], tiers: List[int]) -> int:
     if value is None:
         return 0
-    for i in range(len(AVAILABLE_TIERS) - 1, -1, -1):
-        if value > AVAILABLE_TIERS[i]:
+    for i in range(len(tiers) - 1, -1, -1):
+        if value > tiers[i]:
             return i + 1
     return 0
 
@@ -338,12 +342,13 @@ def handle_available_metric(
     """
     alerts: List[Dict] = []
 
-    last_tier = _available_tier(last_value)
-    curr_tier = _available_tier(value)
+    tiers = AVAILABLE_TIERS_KEY.get(key, AVAILABLE_TIERS)
+    last_tier = _available_tier(last_value, tiers)
+    curr_tier = _available_tier(value, tiers)
 
     if curr_tier > last_tier:
-        crossed = AVAILABLE_TIERS[curr_tier - 1]
-        level = "major" if curr_tier == len(AVAILABLE_TIERS) else "minor"
+        crossed = tiers[curr_tier - 1]
+        level = "major" if curr_tier == len(tiers) else "minor"
         icon = ":scream_cat:" if level == "major" else ":smirk_cat:"
         alerts.append(
             {

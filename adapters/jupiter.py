@@ -12,6 +12,12 @@ VAULTS: dict[int, str] = {
     33: "USDS",
 }
 
+# The jup.ag "sentora" market is served from the ethena backend (vault ids > 5).
+ETHENA_BORROWABLE: dict[tuple[str, str], str] = {
+    ("USDe", "USDG"): "ethena",
+    ("USDe", "PYUSD"): "sentora",
+}
+
 RATE_SCALE = 10_000
 
 
@@ -55,8 +61,8 @@ def _extract_borrowable(vault_payload: dict) -> float:
 def fetch() -> list[dict]:
     """
     Fetch Jupiter syrupUSD/* borrow APRs for the configured vault ids not in
-    PAUSED_KEYS, and USDG borrowable amounts from the USDe Loop vault on the
-    ethena endpoint.
+    PAUSED_KEYS, and borrowable amounts for the ETHENA_BORROWABLE vaults on
+    the ethena endpoint.
 
     Returns a list of metric dicts.
     """
@@ -89,13 +95,14 @@ def fetch() -> list[dict]:
     for vault in _fetch_ethena_vaults():
         borrow_symbol = vault.get("borrowToken", {}).get("symbol")
         supply_symbol = vault.get("supplyToken", {}).get("symbol")
-        if borrow_symbol != "USDG" or supply_symbol != "USDe":
+        market = ETHENA_BORROWABLE.get((supply_symbol, borrow_symbol))
+        if market is None:
             continue
 
         metrics.append(
             {
-                "key": "jupiter:ethena:usde:usdg:borrow:available",
-                "name": "Jupiter Ethena USDe/USDG Borrowable",
+                "key": f"jupiter:{market}:{supply_symbol.lower()}:{borrow_symbol.lower()}:borrow:available",
+                "name": f"Jupiter {market.capitalize()} {supply_symbol}/{borrow_symbol} Borrowable",
                 "value": _extract_borrowable(vault),
                 "unit": "available",
                 "adapter": "jupiter",

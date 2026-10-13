@@ -11,6 +11,7 @@ from engine import (
     ADAPTERS,
     AVAILABLE_DEPLETION_THRESHOLD,
     AVAILABLE_TIERS,
+    AVAILABLE_TIERS_KEY,
     DEFAULT_INTERVAL_SECONDS,
     MIN_INTERVAL_SECONDS,
     adapter_intervals,
@@ -244,6 +245,9 @@ def _available_text() -> str:
         joined = " / ".join(f"{n:,}" for n in minor_tiers)
         lines.append(f"Crossing up through {joined}: minor")
     lines.append(f"Crossing up through {major_tier:,}: major")
+    for key, tiers in sorted(AVAILABLE_TIERS_KEY.items()):
+        joined = " / ".join(f"{n:,}" for n in tiers)
+        lines.append(f"Override for {key}: {joined}")
     lines.append(f"Dropping below {AVAILABLE_DEPLETION_THRESHOLD:,}: major")
     return "\n".join(lines)
 
